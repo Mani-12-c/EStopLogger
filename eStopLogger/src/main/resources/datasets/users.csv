@@ -1,0 +1,5 @@
+user_id,username,password,full_name,role,assigned_station_id,shift
+1,op_ravi,password123,Ravi Kumar,OPERATOR,3,MORNING
+2,op_priya,password123,Priya Sharma,OPERATOR,2,MORNING
+3,sup_anand,password123,Anand Reddy,SUPERVISOR,,MORNING
+4,aud_meena,password123,Meena Iyer,AUDITOR,,MORNING

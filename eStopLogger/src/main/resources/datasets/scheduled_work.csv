@@ -1,0 +1,5 @@
+work_id,station_id,factory_id,block_id,work_type,probable_emergency,instant_help,start_time,end_time,risk_level
+1,3,100091,B2,Electrical,Health/Fire/Machine,Send Ambulance/Fire Dept,2026-04-03 10:00,2026-04-03 14:00,HIGH
+2,2,100091,B1,Welding,Fire/Burns,Send Fire Dept/Ambulance,2026-04-03 09:00,2026-04-03 12:00,MEDIUM
+3,4,100092,B1,Chemical Handling,Toxic Exposure/Fire,Send Hazmat/Ambulance,2026-04-03 13:00,2026-04-03 16:00,CRITICAL
+4,5,100092,B2,Mechanical Maintenance,Injury/Crush,Send Ambulance,2026-04-03 08:00,2026-04-03 11:00,LOW

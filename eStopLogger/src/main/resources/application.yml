@@ -1,0 +1,33 @@
+server:
+  port: 9090
+
+spring:
+  application:
+    name: eStopLogger
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+# JWT Configuration
+app:
+  jwt:
+    # Base64 encoded 256-bit secret key for HS256
+    secret: Y29tLmV4YW1wbGUuZXN0b3Bsb2dnZXIuand0LnNlY3JldC5rZXkuZm9yLmhzMjU2LnNpZ25pbmc=
+    expiration-ms: 86400000  # 24 hours
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:3000
+
+# Springdoc / Swagger
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: method
