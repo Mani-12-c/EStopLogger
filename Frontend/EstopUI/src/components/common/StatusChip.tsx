@@ -6,6 +6,8 @@ const STATUS_MAP: Record<string, { color: string; bg: string }> = {
   ESCALATED: { color: '#F97316', bg: 'rgba(249,115,22,0.12)' },
   CRITICAL: { color: '#EF4444', bg: 'rgba(239,68,68,0.12)' },
   RESOLVED: { color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },
+  RELEASED: { color: '#06B6D4', bg: 'rgba(6,182,212,0.12)' },
+  AUTO_DISPATCHED: { color: '#DC2626', bg: 'rgba(220,38,38,0.12)' },
   CLOSED: { color: '#6B7280', bg: 'rgba(107,114,128,0.12)' },
   // Severity
   LOW: { color: '#22C55E', bg: 'rgba(34,197,94,0.12)' },

@@ -83,17 +83,39 @@ public class SafetyService {
         event = eventRepository.save(event);
 
         // 2. Check for rapid sequential press (same station, within 5 seconds)
-        boolean isRapid = checkRapidSequence(station.getStationId(), pressedAt);
-        if (isRapid) {
-            event.setIsRapidSequence(true);
-            event.setEventStatus(EventStatus.CRITICAL);
-            event.setSeverity(Severity.CRITICAL);
-            log.warn("RAPID SEQUENCE DETECTED at Station {} - Event {}", station.getStationId(), event.getEventId());
+        //    Double-press = operator is RELEASING the e-stop → resolve the original event
+        List<EStopEvent> recentOpenEvents = findRecentOpenEvents(station.getStationId(), pressedAt, event.getEventId());
+        boolean isRapid = !recentOpenEvents.isEmpty();
 
-            // Auto-dispatch immediately for rapid sequence
-            notificationService.autoDispatch(event, null, "Rapid sequential E-Stop press detected");
-            auditService.logAction(event, "RAPID_SEQUENCE_DETECTED", null,
-                    "2nd press within 5 seconds at station " + station.getStationName());
+        if (isRapid) {
+            // Release the original open event(s)
+            for (EStopEvent original : recentOpenEvents) {
+                original.setEventStatus(EventStatus.RELEASED);
+                original.setIsRapidSequence(true);
+                eventRepository.save(original);
+                auditService.logAction(original, "RELEASED", null,
+                        "Released by 2nd E-Stop press within 5 seconds at station " + station.getStationName());
+                log.info("Event {} RELEASED by double-press at Station {}",
+                        original.getEventId(), station.getStationId());
+            }
+
+            // Mark the new (2nd) event as RELEASED too — it's just the release press
+            event.setIsRapidSequence(true);
+            event.setEventStatus(EventStatus.RELEASED);
+            event.setSeverity(Severity.LOW);
+            event = eventRepository.save(event);
+
+            // Update HMI — recalculate based on remaining active events
+            hmiService.refreshHmiState(station.getStationId());
+
+            auditService.logAction(event, "E-STOP_RELEASED", null,
+                    String.format("Double-press release at Station %s, Block %s, Factory %s",
+                            station.getStationName(), dto.getBlockId(), factory.getFactoryName()));
+
+            log.info("E-Stop RELEASED (double-press): eventId={}, stationId={}",
+                    event.getEventId(), station.getStationId());
+
+            return event;
         }
 
         // 3. Correlate with scheduled work
@@ -107,13 +129,6 @@ public class SafetyService {
         // 4. Calculate risk score
         int riskScore = riskScoringService.calculateRiskScore(event);
         event.setRiskScore(riskScore);
-
-        // If rapid sequence, auto-dispatch with work context
-        if (isRapid && correlatedWork != null) {
-            notificationService.autoDispatch(event, correlatedWork,
-                    "Rapid sequence during " + correlatedWork.getWorkType());
-            event.setEventStatus(EventStatus.AUTO_DISPATCHED);
-        }
 
         event = eventRepository.save(event);
 
@@ -132,15 +147,20 @@ public class SafetyService {
     }
 
     /**
-     * Checks if there was a recent press from the same station within 5 seconds.
+     * Finds recent OPEN events from the same station within the 5-second rapid-press window.
+     * Excludes the current event to avoid self-matching.
+     * These are candidates for release when a double-press is detected.
      */
-    private boolean checkRapidSequence(Long stationId, LocalDateTime pressedAt) {
+    private List<EStopEvent> findRecentOpenEvents(Long stationId, LocalDateTime pressedAt, Long currentEventId) {
         LocalDateTime windowStart = pressedAt.minusSeconds(5);
         List<EStopEvent> recentEvents = eventRepository.findByStationAndTimeRange(
                 stationId, windowStart, pressedAt);
 
-        // If there's at least 1 other event in the 5-second window
-        return !recentEvents.isEmpty();
+        // Only return OPEN events, excluding the current event itself
+        return recentEvents.stream()
+                .filter(e -> e.getEventStatus() == EventStatus.OPEN)
+                .filter(e -> !e.getEventId().equals(currentEventId))
+                .collect(java.util.stream.Collectors.toList());
     }
 
     /**

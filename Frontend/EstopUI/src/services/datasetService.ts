@@ -6,9 +6,7 @@ export const datasetService = {
     const form = new FormData();
     form.append('file', file);
     form.append('type', type);
-    return api.post<ApiResponse<DatasetStatusDTO>>('/datasets/upload', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-    });
+    return api.post<ApiResponse<DatasetStatusDTO>>('/datasets/upload', form);
   },
 
   simulate: (count = 10) =>

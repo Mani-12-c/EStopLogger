@@ -34,8 +34,7 @@ export const analyticsService = {
     }),
 
   getRiskTrend: (stationId: number, weeks = 12) =>
-    api.get<ApiResponse<FrequencyDTO[]>>(
-      `/analytics/risk-trend/${stationId}`,
-      { params: { weeks } }
-    ),
+    api.get<ApiResponse<FrequencyDTO[]>>('/analytics/trend', {
+      params: { stationId, weeks },
+    }),
 };

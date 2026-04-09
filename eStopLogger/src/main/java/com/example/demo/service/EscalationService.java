@@ -64,7 +64,6 @@ public class EscalationService {
         log.warn("ESCALATING event {} - unacknowledged for >2 minutes at station {}",
                 event.getEventId(), event.getStation().getStationId());
 
-        event.setEventStatus(EventStatus.ESCALATED);
         event.setSeverity(Severity.HIGH);
 
         // Check if there's correlated scheduled work
@@ -73,20 +72,18 @@ public class EscalationService {
             work = correlationService.correlate(event);
         }
 
-        if (work != null && isHighRiskWork(work)) {
-            // High-risk work overlap → auto-dispatch
-            event.setEventStatus(EventStatus.AUTO_DISPATCHED);
-            event.setSeverity(Severity.CRITICAL);
-            notificationService.autoDispatch(event, work,
-                    "Unacknowledged event >2 min during " + work.getWorkType());
-            auditService.logAction(event, "AUTO_DISPATCHED", null,
-                    "Escalated + auto-dispatched due to " + work.getWorkType() + " overlap");
-        } else {
-            // No high-risk work → alert supervisor
-            notificationService.alertSupervisor(event);
-            auditService.logAction(event, "ESCALATED", null,
-                    "Unacknowledged for >2 minutes, supervisor alerted");
+        // Auto-dispatch since no one acknowledged within the threshold
+        event.setEventStatus(EventStatus.AUTO_DISPATCHED);
+        event.setSeverity(Severity.CRITICAL);
+
+        String reason = "Unacknowledged E-Stop event for >2 minutes";
+        if (work != null) {
+            reason += " during " + work.getWorkType();
         }
+
+        notificationService.autoDispatch(event, work, reason);
+        notificationService.alertSupervisor(event);
+        auditService.logAction(event, "AUTO_DISPATCHED", null, reason);
 
         // Update HMI to RED (keep it red during escalation)
         hmiService.updateState(event.getStation().getStationId(), HmiState.RED);
@@ -95,13 +92,5 @@ public class EscalationService {
 
         auditService.logAction(event, "STATUS_CHANGED", null,
                 "OPEN → " + event.getEventStatus().name());
-    }
-
-    /**
-     * Determines if the scheduled work is high risk (HIGH or CRITICAL).
-     */
-    private boolean isHighRiskWork(ScheduledWork work) {
-        return work.getRiskLevel() != null &&
-                (work.getRiskLevel().name().equals("HIGH") || work.getRiskLevel().name().equals("CRITICAL"));
     }
 }

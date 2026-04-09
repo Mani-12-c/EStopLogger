@@ -44,7 +44,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/datasets/**").hasRole("SUPERVISOR")
 
                 // Analytics endpoints — SUPERVISOR only
-                .requestMatchers("/api/analytics/**").hasRole("SUPERVISOR")
+                .requestMatchers("/api/analytics/**").hasAnyRole("SUPERVISOR","OPERATOR")
 
                 // Audit endpoints — AUDITOR only
                 .requestMatchers("/api/audit/**").hasRole("AUDITOR")

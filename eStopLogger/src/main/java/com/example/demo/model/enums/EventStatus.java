@@ -6,5 +6,6 @@ public enum EventStatus {
     ESCALATED,
     CRITICAL,
     RESOLVED,
-    AUTO_DISPATCHED
+    AUTO_DISPATCHED,
+    RELEASED
 }

@@ -1,7 +1,7 @@
 /* ───────────────────── Enums ───────────────────── */
 
 export type UserRole = 'OPERATOR' | 'SUPERVISOR' | 'AUDITOR';
-export type EventStatus = 'OPEN' | 'ACKNOWLEDGED' | 'ESCALATED' | 'CRITICAL' | 'RESOLVED' | 'CLOSED';
+export type EventStatus = 'OPEN' | 'ACKNOWLEDGED' | 'ESCALATED' | 'CRITICAL' | 'RESOLVED' | 'CLOSED' | 'RELEASED' | 'AUTO_DISPATCHED';
 export type Severity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type RiskLevel = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type StationStatus = 'ACTIVE' | 'INACTIVE' | 'MAINTENANCE';
@@ -9,10 +9,10 @@ export type HmiState = 'GREEN' | 'AMBER' | 'RED';
 export type ShiftType = 'MORNING' | 'AFTERNOON' | 'NIGHT';
 export type ResolutionCategory =
   | 'FALSE_ALARM'
-  | 'EQUIPMENT_MALFUNCTION'
-  | 'SAFETY_HAZARD'
-  | 'OPERATOR_ERROR'
-  | 'OTHER';
+  | 'REAL_EMERGENCY'
+  | 'TESTING_MAINTENANCE'
+  | 'MACHINE_FAULT'
+  | 'CUSTOM_RESOLUTION';
 
 /* ───────────────────── API Wrapper ───────────────────── */
 

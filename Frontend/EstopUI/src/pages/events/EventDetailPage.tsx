@@ -33,11 +33,11 @@ import dayjs from 'dayjs';
 
 const RESOLUTION_OPTIONS: { value: ResolutionCategory; label: string }[] = [
   { value: 'FALSE_ALARM', label: 'False Alarm' },
-  { value: 'EQUIPMENT_MALFUNCTION', label: 'Equipment Malfunction' },
-  { value: 'SAFETY_HAZARD', label: 'Safety Hazard' },
-  { value: 'OPERATOR_ERROR', label: 'Operator Error' },
-  { value: 'OTHER', label: 'Other' },
-];
+  { value: 'REAL_EMERGENCY', label: 'Real Emergency' },
+  { value: 'TESTING_MAINTENANCE', label: 'Testing/Maintenance' },
+  { value: 'MACHINE_FAULT', label: 'Machine Fault' },
+  { value: 'CUSTOM_RESOLUTION', label: 'Custom Resolution' },
+]; 
 
 export default function EventDetailPage() {
   const { id } = useParams<{ id: string }>();
