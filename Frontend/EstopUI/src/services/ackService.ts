@@ -7,4 +7,9 @@ export const ackService = {
       `/acknowledgements/${eventId}/acknowledge`,
       data
     ),
+
+  resolve: (eventId: number) =>
+    api.post<ApiResponse<string>>(
+      `/acknowledgements/${eventId}/resolve`
+    ),
 };

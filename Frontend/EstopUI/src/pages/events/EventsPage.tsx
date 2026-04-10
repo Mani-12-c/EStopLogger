@@ -130,7 +130,7 @@ export default function EventsPage() {
             }}
           >
             <MenuItem value="">All</MenuItem>
-            {['OPEN', 'ACKNOWLEDGED', 'ESCALATED', 'CRITICAL', 'RESOLVED', 'CLOSED'].map(
+            {['OPEN', 'ACKNOWLEDGED', 'ESCALATED', 'CRITICAL', 'AUTO_DISPATCHED', 'RELEASED', 'RESOLVED', 'CLOSED'].map(
               (s) => (
                 <MenuItem key={s} value={s}>
                   {s}

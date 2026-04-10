@@ -85,7 +85,7 @@ public class AcknowledgementService {
 
         ackRepository.save(ack);
 
-        // Update event status
+        // Update event status to ACKNOWLEDGED (not resolved yet — stays open until operator closes ticket)
         event.setEventStatus(EventStatus.ACKNOWLEDGED);
         eventRepository.save(event);
 
@@ -96,12 +96,7 @@ public class AcknowledgementService {
                     "Operator confirmed real emergency - detailed help dispatched");
         }
 
-        // Resolve the event
-        event.setEventStatus(EventStatus.RESOLVED);
-        eventRepository.save(event);
-
-        // Update HMI state
-        hmiService.refreshHmiState(event.getStation().getStationId());
+        // HMI stays RED — event is acknowledged but not yet resolved
 
         // Audit log
         auditService.logAction(event, "ACKNOWLEDGED", user.getUserId(),
@@ -120,5 +115,34 @@ public class AcknowledgementService {
                 .customResolutionText(request.getCustomResolutionText())
                 .ackWithinThreshold(withinThreshold)
                 .build();
+    }
+
+    /**
+     * Resolves (closes) an acknowledged E-Stop event.
+     * Called when the operator confirms the issue is fixed and closes the ticket.
+     */
+    @Transactional
+    public void resolveEvent(Long eventId, String username) {
+        EStopEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("EStopEvent", "id", eventId));
+
+        if (event.getEventStatus() != EventStatus.ACKNOWLEDGED) {
+            throw new IllegalStateException(
+                    "Only ACKNOWLEDGED events can be resolved. Current status: " + event.getEventStatus());
+        }
+
+        AppUser user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User", "username", username));
+
+        event.setEventStatus(EventStatus.RESOLVED);
+        eventRepository.save(event);
+
+        // Now refresh HMI — will go GREEN if no other active events
+        hmiService.refreshHmiState(event.getStation().getStationId());
+
+        auditService.logAction(event, "RESOLVED", user.getUserId(),
+                "Ticket closed by operator - issue resolved");
+
+        log.info("Event {} resolved (ticket closed) by {}", eventId, username);
     }
 }

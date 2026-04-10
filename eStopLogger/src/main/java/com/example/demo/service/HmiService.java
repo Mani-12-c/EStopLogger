@@ -28,21 +28,18 @@ public class HmiService {
 
     /**
      * Calculates the current HMI state for a station based on active events.
-     *   RED   — Any OPEN, ESCALATED, CRITICAL, or AUTO_DISPATCHED event
-     *   AMBER — Any ACKNOWLEDGED but not RESOLVED event
-     *   GREEN — All events resolved (or no events)
+     *   RED   — Any OPEN, ESCALATED, CRITICAL, AUTO_DISPATCHED, or ACKNOWLEDGED event
+     *   AMBER — (reserved for future use)
+     *   GREEN — All events resolved/released (or no events)
      */
     public HmiState calculateHmiState(Long stationId) {
         List<EventStatus> redStatuses = List.of(
                 EventStatus.OPEN, EventStatus.ESCALATED,
-                EventStatus.CRITICAL, EventStatus.AUTO_DISPATCHED);
+                EventStatus.CRITICAL, EventStatus.AUTO_DISPATCHED,
+                EventStatus.ACKNOWLEDGED);
 
         Long redCount = eventRepository.countActiveByStation(stationId, redStatuses);
         if (redCount > 0) return HmiState.RED;
-
-        Long amberCount = eventRepository.countActiveByStation(stationId,
-                List.of(EventStatus.ACKNOWLEDGED));
-        if (amberCount > 0) return HmiState.AMBER;
 
         return HmiState.GREEN;
     }

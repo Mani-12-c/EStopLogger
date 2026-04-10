@@ -36,4 +36,15 @@ public class AcknowledgementController {
         AckResponseDTO response = acknowledgementService.acknowledgeEvent(eventId, request, username);
         return ResponseEntity.ok(ApiResponse.success("Event acknowledged", response));
     }
+
+    @PostMapping("/{eventId}/resolve")
+    @Operation(summary = "Resolve (close ticket) an acknowledged E-Stop event")
+    public ResponseEntity<ApiResponse<String>> resolveEvent(
+            @PathVariable Long eventId,
+            Authentication authentication) {
+
+        String username = authentication.getName();
+        acknowledgementService.resolveEvent(eventId, username);
+        return ResponseEntity.ok(ApiResponse.success("Event resolved - ticket closed", null));
+    }
 }

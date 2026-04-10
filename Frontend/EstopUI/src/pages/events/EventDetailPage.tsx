@@ -57,6 +57,7 @@ export default function EventDetailPage() {
   });
   const [acking, setAcking] = useState(false);
   const [ackError, setAckError] = useState('');
+  const [resolving, setResolving] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -91,6 +92,21 @@ export default function EventDetailPage() {
     }
   };
 
+  const handleResolve = async () => {
+    if (!event?.eventId) return;
+    setResolving(true);
+    try {
+      await ackService.resolve(event.eventId);
+      toast.success('Ticket closed — event resolved!');
+      const res = await eventService.getById(event.eventId);
+      setEvent(res.data.data);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to close ticket');
+    } finally {
+      setResolving(false);
+    }
+  };
+
   if (loading) return <PageLoader />;
   if (!event)
     return (
@@ -99,7 +115,7 @@ export default function EventDetailPage() {
       </Typography>
     );
 
-  const isOpen = event.eventStatus === 'OPEN' || event.eventStatus === 'ESCALATED' || event.eventStatus === 'CRITICAL';
+  const isAckable = event.eventStatus === 'OPEN' || event.eventStatus === 'ESCALATED' || event.eventStatus === 'CRITICAL' || event.eventStatus === 'AUTO_DISPATCHED';
 
   return (
     <Box>
@@ -118,9 +134,19 @@ export default function EventDetailPage() {
             {event.factoryName || event.factoryId}
           </Typography>
         </Box>
-        {isOpen && hasRole('OPERATOR') && (
+        {isAckable && hasRole('OPERATOR') && (
           <Button variant="contained" onClick={() => setAckOpen(true)}>
             Acknowledge
+          </Button>
+        )}
+        {event.eventStatus === 'ACKNOWLEDGED' && hasRole('OPERATOR') && (
+          <Button
+            variant="contained"
+            color="success"
+            onClick={handleResolve}
+            disabled={resolving}
+          >
+            {resolving ? 'Closing…' : 'Close Ticket'}
           </Button>
         )}
       </Box>

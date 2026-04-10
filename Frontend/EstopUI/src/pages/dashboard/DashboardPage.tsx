@@ -179,7 +179,12 @@ export default function DashboardPage() {
             title="Avg Response"
             value={
               summary?.meanAckTimeSeconds
-                ? `${Math.round(summary.meanAckTimeSeconds)}s`
+                ? (() => {
+                    const totalSec = Math.round(summary.meanAckTimeSeconds);
+                    const min = Math.floor(totalSec / 60);
+                    const sec = totalSec % 60;
+                    return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+                  })()
                 : '—'
             }
             subtitle="Mean acknowledgement time"
