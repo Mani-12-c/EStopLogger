@@ -1,11 +1,14 @@
 package com.example.demo.controller;
 
 import com.example.demo.model.dto.ApiResponse;
+import com.example.demo.model.dto.DispatchDTO;
 import com.example.demo.model.dto.EStopEventDTO;
+import com.example.demo.model.entity.DispatchLog;
 import com.example.demo.model.entity.EStopEvent;
 import com.example.demo.model.enums.EventStatus;
 import com.example.demo.model.enums.Severity;
 import com.example.demo.repository.EStopEventRepository;
+import com.example.demo.service.NotificationService;
 import com.example.demo.service.SafetyService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,12 +33,15 @@ public class EStopEventController {
 
     private final SafetyService safetyService;
     private final EStopEventRepository eventRepository;
+    private final NotificationService notificationService;
 
     @Autowired
     public EStopEventController(SafetyService safetyService,
-                                EStopEventRepository eventRepository) {
+                                EStopEventRepository eventRepository,
+                                NotificationService notificationService) {
         this.safetyService = safetyService;
         this.eventRepository = eventRepository;
+        this.notificationService = notificationService;
     }
 
     @PostMapping
@@ -96,6 +102,30 @@ public class EStopEventController {
                 .map(this::toDTO)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(ApiResponse.success(events));
+    }
+
+    @PostMapping("/{id}/release")
+    @Operation(summary = "Release an E-Stop event via double-press (rapid sequence)")
+    public ResponseEntity<ApiResponse<EStopEventDTO>> releaseEvent(@PathVariable Long id) {
+        EStopEvent event = safetyService.releaseEvent(id);
+        return ResponseEntity.ok(ApiResponse.success("E-Stop released via double-press", toDTO(event)));
+    }
+
+    @GetMapping("/{id}/dispatches")
+    @Operation(summary = "Get dispatch logs for an event")
+    public ResponseEntity<ApiResponse<List<DispatchDTO>>> getDispatches(@PathVariable Long id) {
+        List<DispatchDTO> dispatches = notificationService.getDispatchesForEvent(id).stream()
+                .map(d -> DispatchDTO.builder()
+                        .dispatchId(d.getDispatchId())
+                        .eventId(d.getEvent().getEventId())
+                        .dispatchType(d.getDispatchType().name())
+                        .dispatchedAt(d.getDispatchedAt())
+                        .triggerReason(d.getTriggerReason())
+                        .responseStatus(d.getResponseStatus().name())
+                        .notes(d.getNotes())
+                        .build())
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(ApiResponse.success(dispatches));
     }
 
     private EStopEventDTO toDTO(EStopEvent event) {

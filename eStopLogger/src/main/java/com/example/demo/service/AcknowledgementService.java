@@ -85,7 +85,7 @@ public class AcknowledgementService {
 
         ackRepository.save(ack);
 
-        // Update event status to ACKNOWLEDGED (not resolved yet — stays open until operator closes ticket)
+        // Update event status to ACKNOWLEDGED (not resolved yet — stays open until supervisor closes ticket)
         event.setEventStatus(EventStatus.ACKNOWLEDGED);
         eventRepository.save(event);
 
@@ -93,7 +93,7 @@ public class AcknowledgementService {
         if (request.getResolutionCategory() == ResolutionCategory.REAL_EMERGENCY) {
             notificationService.sendDetailedHelp(event, event.getCorrelatedWork());
             auditService.logAction(event, "REAL_EMERGENCY_CONFIRMED", user.getUserId(),
-                    "Operator confirmed real emergency - detailed help dispatched");
+                    "Confirmed real emergency - detailed help dispatched");
         }
 
         // HMI stays RED — event is acknowledged but not yet resolved
@@ -109,7 +109,8 @@ public class AcknowledgementService {
         return AckResponseDTO.builder()
                 .ackId(ack.getAckId())
                 .eventId(eventId)
-                .username(username)
+                .username(user.getFullName())
+                .role(user.getRole().name())
                 .acknowledgedAt(now)
                 .resolutionCategory(request.getResolutionCategory().name())
                 .customResolutionText(request.getCustomResolutionText())
@@ -141,8 +142,28 @@ public class AcknowledgementService {
         hmiService.refreshHmiState(event.getStation().getStationId());
 
         auditService.logAction(event, "RESOLVED", user.getUserId(),
-                "Ticket closed by operator - issue resolved");
+                "Ticket closed by supervisor - issue resolved");
 
-        log.info("Event {} resolved (ticket closed) by {}", eventId, username);
+        log.info("Event {} resolved (ticket closed) by supervisor {}", eventId, username);
+    }
+
+    /**
+     * Retrieves acknowledgement details for a given event.
+     */
+    public AckResponseDTO getAckForEvent(Long eventId) {
+        Acknowledgement ack = ackRepository.findByEvent_EventId(eventId)
+                .orElse(null);
+        if (ack == null) return null;
+
+        return AckResponseDTO.builder()
+                .ackId(ack.getAckId())
+                .eventId(eventId)
+                .username(ack.getUser().getFullName())
+                .role(ack.getUser().getRole().name())
+                .acknowledgedAt(ack.getAcknowledgedAt())
+                .resolutionCategory(ack.getResolutionCategory().name())
+                .customResolutionText(ack.getCustomResolutionText())
+                .ackWithinThreshold(ack.getAckWithinThreshold())
+                .build();
     }
 }

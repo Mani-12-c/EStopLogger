@@ -19,8 +19,23 @@ import {
   Step,
   StepLabel,
   StepContent,
+  Chip,
+  Divider,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
 } from '@mui/material';
-import { ArrowBack } from '@mui/icons-material';
+import {
+  ArrowBack,
+  LocalHospital,
+  LocalFireDepartment,
+  Security,
+  Warning,
+  Emergency,
+  CheckCircle,
+  Person,
+} from '@mui/icons-material';
 import StatusChip from '../../components/common/StatusChip';
 import PageLoader from '../../components/common/PageLoader';
 import { eventService } from '../../services/eventService';
@@ -28,7 +43,7 @@ import { ackService } from '../../services/ackService';
 import { auditService } from '../../services/auditService';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
-import type { EStopEventDTO, AckRequest, EventTimelineDTO, ResolutionCategory } from '../../types';
+import type { EStopEventDTO, AckRequest, AckResponse, EventTimelineDTO, ResolutionCategory, DispatchDTO } from '../../types';
 import dayjs from 'dayjs';
 
 const RESOLUTION_OPTIONS: { value: ResolutionCategory; label: string }[] = [
@@ -58,16 +73,23 @@ export default function EventDetailPage() {
   const [acking, setAcking] = useState(false);
   const [ackError, setAckError] = useState('');
   const [resolving, setResolving] = useState(false);
+  const [dispatches, setDispatches] = useState<DispatchDTO[]>([]);
+  const [pressingAgain, setPressingAgain] = useState(false);
+  const [ackDetails, setAckDetails] = useState<AckResponse | null>(null);
 
   useEffect(() => {
     if (!id) return;
     Promise.all([
       eventService.getById(Number(id)),
       auditService.getTimeline(Number(id)).catch(() => null),
+      eventService.getDispatches(Number(id)).catch(() => null),
+      ackService.getByEvent(Number(id)).catch(() => null),
     ])
-      .then(([evtRes, tlRes]) => {
+      .then(([evtRes, tlRes, dispRes, ackRes]) => {
         setEvent(evtRes.data.data);
         if (tlRes) setTimeline(tlRes.data.data);
+        if (dispRes) setDispatches(dispRes.data.data || []);
+        if (ackRes?.data?.data) setAckDetails(ackRes.data.data);
       })
       .finally(() => setLoading(false));
   }, [id]);
@@ -80,9 +102,13 @@ export default function EventDetailPage() {
       await ackService.acknowledge(event.eventId, ackForm);
       toast.success('Event acknowledged successfully!');
       setAckOpen(false);
-      // Reload event
-      const res = await eventService.getById(event.eventId);
-      setEvent(res.data.data);
+      // Reload event + ack details
+      const [evtRes, ackRes] = await Promise.all([
+        eventService.getById(event.eventId),
+        ackService.getByEvent(event.eventId).catch(() => null),
+      ]);
+      setEvent(evtRes.data.data);
+      if (ackRes?.data?.data) setAckDetails(ackRes.data.data);
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Acknowledgement failed';
       setAckError(msg);
@@ -107,6 +133,46 @@ export default function EventDetailPage() {
     }
   };
 
+  /** Rapid sequence: operator presses E-Stop a second time — releases this event (no duplicate) */
+  const handlePressAgain = async () => {
+    if (!event?.eventId) return;
+    setPressingAgain(true);
+    try {
+      const releaseRes = await eventService.release(event.eventId);
+      toast.success('E-Stop released — rapid sequence detected!');
+      setEvent(releaseRes.data.data);
+      // Reload dispatches
+      const dispRes = await eventService.getDispatches(event.eventId).catch(() => null);
+      if (dispRes) setDispatches(dispRes.data.data || []);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to release E-Stop');
+    } finally {
+      setPressingAgain(false);
+    }
+  };
+
+  const getDispatchIcon = (type: string) => {
+    switch (type) {
+      case 'AMBULANCE': return <LocalHospital sx={{ color: '#EF4444' }} />;
+      case 'FIRE_DEPT': return <LocalFireDepartment sx={{ color: '#F97316' }} />;
+      case 'SECURITY': return <Security sx={{ color: '#3B82F6' }} />;
+      case 'ALL_EMERGENCY': return <Emergency sx={{ color: '#DC2626' }} />;
+      case 'SUPERVISOR_ALERT': return <Warning sx={{ color: '#EAB308' }} />;
+      default: return <Warning sx={{ color: '#888' }} />;
+    }
+  };
+
+  const getDispatchLabel = (type: string) => {
+    switch (type) {
+      case 'AMBULANCE': return 'Ambulance Dispatched';
+      case 'FIRE_DEPT': return 'Fire Department Dispatched';
+      case 'SECURITY': return 'Security Dispatched';
+      case 'ALL_EMERGENCY': return 'All Emergency Services Dispatched';
+      case 'SUPERVISOR_ALERT': return 'Supervisor Alerted';
+      default: return type;
+    }
+  };
+
   if (loading) return <PageLoader />;
   if (!event)
     return (
@@ -115,7 +181,7 @@ export default function EventDetailPage() {
       </Typography>
     );
 
-  const isAckable = event.eventStatus === 'OPEN' || event.eventStatus === 'ESCALATED' || event.eventStatus === 'CRITICAL' || event.eventStatus === 'AUTO_DISPATCHED';
+  const isAckable = event.eventStatus === 'OPEN' || event.eventStatus === 'ESCALATED' || event.eventStatus === 'CRITICAL' || event.eventStatus === 'AUTO_DISPATCHED' || event.eventStatus === 'RELEASED';
 
   return (
     <Box>
@@ -134,12 +200,23 @@ export default function EventDetailPage() {
             {event.factoryName || event.factoryId}
           </Typography>
         </Box>
-        {isAckable && hasRole('OPERATOR') && (
+        {isAckable && hasRole('OPERATOR', 'SUPERVISOR') && (
           <Button variant="contained" onClick={() => setAckOpen(true)}>
             Acknowledge
           </Button>
         )}
-        {event.eventStatus === 'ACKNOWLEDGED' && hasRole('OPERATOR') && (
+        {event.eventStatus === 'OPEN' && hasRole('OPERATOR', 'SUPERVISOR') && (
+          <Button
+            variant="contained"
+            color="error"
+            onClick={handlePressAgain}
+            disabled={pressingAgain}
+            sx={{ fontWeight: 700 }}
+          >
+            {pressingAgain ? 'Pressing…' : '🔴 Press E-Stop Again'}
+          </Button>
+        )}
+        {event.eventStatus === 'ACKNOWLEDGED' && hasRole('SUPERVISOR') && (
           <Button
             variant="contained"
             color="success"
@@ -223,6 +300,168 @@ export default function EventDetailPage() {
           </Card>
         </Grid>
       </Grid>
+
+      {/* Dispatch Details — shown when help has been dispatched */}
+      {dispatches.length > 0 && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Emergency sx={{ color: '#EF4444' }} />
+              Help Dispatched
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#888', mb: 2 }}>
+              The following emergency services were automatically dispatched for this event.
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <List disablePadding>
+              {dispatches.map((d) => (
+                <ListItem
+                  key={d.dispatchId}
+                  sx={{
+                    bgcolor: 'rgba(255,255,255,0.03)',
+                    borderRadius: 2,
+                    mb: 1,
+                    border: '1px solid rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 44 }}>
+                    {getDispatchIcon(d.dispatchType)}
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                          {getDispatchLabel(d.dispatchType)}
+                        </Typography>
+                        <Chip
+                          label={d.responseStatus}
+                          size="small"
+                          sx={{
+                            bgcolor: d.responseStatus === 'DISPATCHED' ? '#22C55E22' : '#888',
+                            color: d.responseStatus === 'DISPATCHED' ? '#22C55E' : '#FFF',
+                            fontWeight: 600,
+                            fontSize: '0.7rem',
+                          }}
+                        />
+                      </Box>
+                    }
+                    secondary={
+                      <Box sx={{ mt: 0.5 }}>
+                        <Typography variant="caption" sx={{ color: '#AAA', display: 'block' }}>
+                          Reason: {d.triggerReason}
+                        </Typography>
+                        {d.notes && (
+                          <Typography variant="caption" sx={{ color: '#888', display: 'block', mt: 0.3 }}>
+                            {d.notes}
+                          </Typography>
+                        )}
+                        <Typography variant="caption" sx={{ color: '#666', display: 'block', mt: 0.3 }}>
+                          Dispatched at: {dayjs(d.dispatchedAt).format('MMM DD, HH:mm:ss')}
+                        </Typography>
+                      </Box>
+                    }
+                  />
+                </ListItem>
+              ))}
+            </List>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Acknowledgement Details — shown once event has been acknowledged */}
+      {ackDetails && (
+        <Card sx={{ mb: 3 }}>
+          <CardContent sx={{ p: 3 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 700, mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CheckCircle sx={{ color: '#22C55E' }} />
+              Acknowledgement Details
+            </Typography>
+            <Divider sx={{ mb: 2 }} />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                  <Person sx={{ color: '#3B82F6', fontSize: 20 }} />
+                  <Box>
+                    <Typography variant="caption" sx={{ color: '#888', display: 'block' }}>
+                      Acknowledged By
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      {ackDetails.username}
+                      <Chip
+                        label={ackDetails.role}
+                        size="small"
+                        sx={{
+                          ml: 1,
+                          bgcolor: ackDetails.role === 'SUPERVISOR' ? '#8B5CF622' : '#3B82F622',
+                          color: ackDetails.role === 'SUPERVISOR' ? '#8B5CF6' : '#3B82F6',
+                          fontWeight: 600,
+                          fontSize: '0.65rem',
+                          height: 20,
+                        }}
+                      />
+                    </Typography>
+                  </Box>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography variant="caption" sx={{ color: '#888', display: 'block' }}>
+                    Acknowledged At
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    {dayjs(ackDetails.acknowledgedAt).format('MMM DD, YYYY HH:mm:ss')}
+                  </Typography>
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography variant="caption" sx={{ color: '#888', display: 'block' }}>
+                    Resolution Category
+                  </Typography>
+                  <Chip
+                    label={ackDetails.resolutionCategory.replace(/_/g, ' ')}
+                    size="small"
+                    sx={{
+                      mt: 0.5,
+                      bgcolor:
+                        ackDetails.resolutionCategory === 'REAL_EMERGENCY' ? '#EF444422' :
+                        ackDetails.resolutionCategory === 'FALSE_ALARM' ? '#EAB30822' :
+                        '#3B82F622',
+                      color:
+                        ackDetails.resolutionCategory === 'REAL_EMERGENCY' ? '#EF4444' :
+                        ackDetails.resolutionCategory === 'FALSE_ALARM' ? '#EAB308' :
+                        '#3B82F6',
+                      fontWeight: 600,
+                    }}
+                  />
+                </Box>
+              </Grid>
+              <Grid size={{ xs: 12, sm: 6 }}>
+                <Box sx={{ mb: 1.5 }}>
+                  <Typography variant="caption" sx={{ color: '#888', display: 'block' }}>
+                    Within Threshold (2 min)
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600, color: ackDetails.ackWithinThreshold ? '#22C55E' : '#EF4444' }}>
+                    {ackDetails.ackWithinThreshold ? '✅ Yes' : '❌ No'}
+                  </Typography>
+                </Box>
+              </Grid>
+              {ackDetails.customResolutionText && (
+                <Grid size={{ xs: 12 }}>
+                  <Box sx={{ bgcolor: 'rgba(255,255,255,0.03)', borderRadius: 2, p: 2, border: '1px solid rgba(255,255,255,0.08)' }}>
+                    <Typography variant="caption" sx={{ color: '#888', display: 'block', mb: 0.5 }}>
+                      Comments / Notes
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: '#DDD', whiteSpace: 'pre-wrap' }}>
+                      {ackDetails.customResolutionText}
+                    </Typography>
+                  </Box>
+                </Grid>
+              )}
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Timeline */}
       {timeline && timeline.timeline && timeline.timeline.length > 0 && (

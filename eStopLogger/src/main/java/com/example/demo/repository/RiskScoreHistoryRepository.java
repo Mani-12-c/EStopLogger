@@ -20,3 +20,5 @@ public interface RiskScoreHistoryRepository extends JpaRepository<RiskScoreHisto
     List<RiskScoreHistory> findByStationAndWeekRange(@Param("stationId") Long stationId,
                                                      @Param("fromWeek") Integer fromWeek);
 }
+
+

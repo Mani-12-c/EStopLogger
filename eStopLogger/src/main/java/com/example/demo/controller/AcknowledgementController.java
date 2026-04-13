@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -27,6 +28,7 @@ public class AcknowledgementController {
 
     @PostMapping("/{eventId}/acknowledge")
     @Operation(summary = "Acknowledge an E-Stop event")
+    @PreAuthorize("hasAnyRole('OPERATOR', 'SUPERVISOR')")
     public ResponseEntity<ApiResponse<AckResponseDTO>> acknowledgeEvent(
             @PathVariable Long eventId,
             @Valid @RequestBody AckRequestDTO request,
@@ -39,6 +41,7 @@ public class AcknowledgementController {
 
     @PostMapping("/{eventId}/resolve")
     @Operation(summary = "Resolve (close ticket) an acknowledged E-Stop event")
+    @PreAuthorize("hasRole('SUPERVISOR')")
     public ResponseEntity<ApiResponse<String>> resolveEvent(
             @PathVariable Long eventId,
             Authentication authentication) {
@@ -46,5 +49,16 @@ public class AcknowledgementController {
         String username = authentication.getName();
         acknowledgementService.resolveEvent(eventId, username);
         return ResponseEntity.ok(ApiResponse.success("Event resolved - ticket closed", null));
+    }
+
+    @GetMapping("/{eventId}")
+    @Operation(summary = "Get acknowledgement details for an event")
+    public ResponseEntity<ApiResponse<AckResponseDTO>> getAckDetails(
+            @PathVariable Long eventId) {
+        AckResponseDTO ack = acknowledgementService.getAckForEvent(eventId);
+        if (ack == null) {
+            return ResponseEntity.ok(ApiResponse.success("No acknowledgement found", null));
+        }
+        return ResponseEntity.ok(ApiResponse.success("Acknowledgement details", ack));
     }
 }

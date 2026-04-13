@@ -112,6 +112,7 @@ export interface AckResponse {
   ackId: number;
   eventId: number;
   username: string;
+  role: string;
   acknowledgedAt: string;
   resolutionCategory: string;
   customResolutionText?: string;

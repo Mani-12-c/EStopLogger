@@ -1,5 +1,5 @@
 import api from './api';
-import type { ApiResponse, EStopEventDTO, Page } from '../types';
+import type { ApiResponse, EStopEventDTO, DispatchDTO, Page } from '../types';
 
 interface EventFilters {
   status?: string;
@@ -28,4 +28,10 @@ export const eventService = {
 
   getByStation: (stationId: number) =>
     api.get<ApiResponse<EStopEventDTO[]>>(`/events/station/${stationId}`),
+
+  getDispatches: (eventId: number) =>
+    api.get<ApiResponse<DispatchDTO[]>>(`/events/${eventId}/dispatches`),
+
+  release: (eventId: number) =>
+    api.post<ApiResponse<EStopEventDTO>>(`/events/${eventId}/release`),
 };

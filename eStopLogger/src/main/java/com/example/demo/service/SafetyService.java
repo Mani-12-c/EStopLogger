@@ -164,6 +164,41 @@ public class SafetyService {
     }
 
     /**
+     * Releases an existing OPEN event via double-press (rapid sequence).
+     * Instead of creating a duplicate event, this updates the existing event in-place.
+     */
+    @Transactional
+    public EStopEvent releaseEvent(Long eventId) {
+        EStopEvent event = eventRepository.findById(eventId)
+                .orElseThrow(() -> new ResourceNotFoundException("EStopEvent", "id", eventId));
+
+        // Only OPEN, ESCALATED, CRITICAL, or AUTO_DISPATCHED events can be released
+        EventStatus status = event.getEventStatus();
+        if (status != EventStatus.OPEN && status != EventStatus.ESCALATED
+                && status != EventStatus.CRITICAL && status != EventStatus.AUTO_DISPATCHED) {
+            throw new IllegalStateException(
+                    "Only active events can be released via double-press. Current status: " + status);
+        }
+
+        event.setIsRapidSequence(true);
+        event.setEventStatus(EventStatus.RELEASED);
+        event = eventRepository.save(event);
+
+        // Update HMI — recalculate based on remaining active events
+        hmiService.refreshHmiState(event.getStation().getStationId());
+
+        auditService.logAction(event, "RELEASED", null,
+                String.format("Double-press release at Station %s, Block %s, Factory %s",
+                        event.getStation().getStationName(), event.getBlockId(),
+                        event.getFactory().getFactoryName()));
+
+        log.info("Event {} RELEASED (double-press) at Station {}",
+                event.getEventId(), event.getStation().getStationId());
+
+        return event;
+    }
+
+    /**
      * Retrieves an event by ID with validation.
      */
     public EStopEvent getEventById(Long eventId) {

@@ -466,7 +466,7 @@ export default function DashboardPage() {
             </Typography>
             <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
               {summary.highRiskStations.map((s) => (
-                <StatusChip key={s} status="CRITICAL" size="medium" />
+                <StatusChip key={s} status={s} size="medium" />
               ))}
             </Box>
           </CardContent>

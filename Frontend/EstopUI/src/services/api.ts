@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-// Uses Vite proxy in dev (/api -> localhost:9090/api)
-const API_BASE = '/api';
+const API_BASE = 'http://localhost:9090/api';
 
 const api = axios.create({
   baseURL: API_BASE,

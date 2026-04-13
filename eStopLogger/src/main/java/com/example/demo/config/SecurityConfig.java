@@ -49,8 +49,8 @@ public class SecurityConfig {
                 // Audit endpoints — AUDITOR only
                 .requestMatchers("/api/audit/**").hasRole("AUDITOR")
 
-                // Acknowledgement — OPERATOR only
-                .requestMatchers(HttpMethod.POST, "/api/events/*/acknowledge").hasRole("OPERATOR")
+                // Acknowledgement — OPERATOR or SUPERVISOR
+                .requestMatchers(HttpMethod.POST, "/api/events/*/acknowledge").hasAnyRole("OPERATOR", "SUPERVISOR")
 
                 // Event endpoints — OPERATOR and SUPERVISOR
                 .requestMatchers("/api/events/**").hasAnyRole("OPERATOR", "SUPERVISOR")

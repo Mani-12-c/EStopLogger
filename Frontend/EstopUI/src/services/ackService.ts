@@ -12,4 +12,9 @@ export const ackService = {
     api.post<ApiResponse<string>>(
       `/acknowledgements/${eventId}/resolve`
     ),
+
+  getByEvent: (eventId: number) =>
+    api.get<ApiResponse<AckResponse>>(
+      `/acknowledgements/${eventId}`
+    ),
 };
