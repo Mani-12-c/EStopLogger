@@ -28,9 +28,10 @@ import {
 import StatusChip from '../../components/common/StatusChip';
 import PageLoader from '../../components/common/PageLoader';
 import { eventService } from '../../services/eventService';
+import { factoryService } from '../../services/factoryService';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../hooks/useToast';
-import type { EStopEventDTO, Page } from '../../types';
+import type { EStopEventDTO, Page, FactoryDTO, FactoryStationDTO } from '../../types';
 import dayjs from 'dayjs';
 
 export default function EventsPage() {
@@ -44,13 +45,12 @@ export default function EventsPage() {
   const [statusFilter, setStatusFilter] = useState('');
   const [severityFilter, setSeverityFilter] = useState('');
 
-  // Create dialog
+  // Create dialog — cascading dropdowns
   const [createOpen, setCreateOpen] = useState(false);
-  const [newEvt, setNewEvt] = useState({
-    stationId: '',
-    factoryId: '',
-    blockId: '',
-  });
+  const [factories, setFactories] = useState<FactoryDTO[]>([]);
+  const [factoryStations, setFactoryStations] = useState<FactoryStationDTO[]>([]);
+  const [factoryBlocks, setFactoryBlocks] = useState<string[]>([]);
+  const [newEvt, setNewEvt] = useState({ stationId: '', factoryId: '', blockId: '' });
   const [creating, setCreating] = useState(false);
 
   const load = useCallback(async () => {
@@ -82,6 +82,8 @@ export default function EventsPage() {
       });
       setCreateOpen(false);
       setNewEvt({ stationId: '', factoryId: '', blockId: '' });
+      setFactoryStations([]);
+      setFactoryBlocks([]);
       toast.success('Event created successfully');
       load();
     } catch (err: any) {
@@ -90,6 +92,43 @@ export default function EventsPage() {
       setCreating(false);
     }
   };
+
+  // Load factories when dialog opens
+  const openCreateDialog = async () => {
+    setCreateOpen(true);
+    if (factories.length === 0) {
+      try {
+        const res = await factoryService.getAll();
+        setFactories(res.data.data || []);
+      } catch { /* ignore */ }
+    }
+  };
+
+  // When factory changes, load its stations and blocks
+  const handleFactoryChange = async (factoryId: string) => {
+    setNewEvt({ stationId: '', factoryId, blockId: '' });
+    setFactoryStations([]);
+    setFactoryBlocks([]);
+    if (!factoryId) return;
+    try {
+      const [staRes, blkRes] = await Promise.all([
+        factoryService.getStations(factoryId),
+        factoryService.getBlocks(factoryId),
+      ]);
+      setFactoryStations(staRes.data.data || []);
+      setFactoryBlocks(blkRes.data.data || []);
+    } catch { /* ignore */ }
+  };
+
+  // When block changes, filter stations to that block
+  const handleBlockChange = (blockId: string) => {
+    setNewEvt((prev) => ({ ...prev, blockId, stationId: '' }));
+  };
+
+  // Stations filtered by selected block
+  const filteredStations = newEvt.blockId
+    ? factoryStations.filter((s) => s.blockId === newEvt.blockId)
+    : factoryStations;
 
   return (
     <Box>
@@ -108,7 +147,7 @@ export default function EventsPage() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setCreateOpen(true)}
+              onClick={openCreateDialog}
             >
               New Event
             </Button>
@@ -244,7 +283,7 @@ export default function EventsPage() {
         </Card>
       )}
 
-      {/* Create Event Dialog */}
+      {/* Create Event Dialog — Cascading Dropdowns */}
       <Dialog
         open={createOpen}
         onClose={() => setCreateOpen(false)}
@@ -253,27 +292,57 @@ export default function EventsPage() {
       >
         <DialogTitle sx={{ fontWeight: 700 }}>New E-Stop Event</DialogTitle>
         <DialogContent sx={{ pt: 2 }}>
+          {/* Factory dropdown */}
           <TextField
             fullWidth
-            label="Station ID"
-            type="number"
+            select
+            label="Factory"
+            value={newEvt.factoryId}
+            onChange={(e) => handleFactoryChange(e.target.value)}
+            sx={{ mt: 1, mb: 2 }}
+          >
+            <MenuItem value="">— Select Factory —</MenuItem>
+            {factories.map((f) => (
+              <MenuItem key={f.factoryId} value={f.factoryId}>
+                {f.factoryName} ({f.factoryId})
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {/* Block dropdown — loads after factory selected */}
+          <TextField
+            fullWidth
+            select
+            label="Block"
+            value={newEvt.blockId}
+            onChange={(e) => handleBlockChange(e.target.value)}
+            disabled={!newEvt.factoryId}
+            sx={{ mb: 2 }}
+          >
+            <MenuItem value="">— Select Block —</MenuItem>
+            {factoryBlocks.map((b) => (
+              <MenuItem key={b} value={b}>
+                {b}
+              </MenuItem>
+            ))}
+          </TextField>
+
+          {/* Station dropdown — filtered by block */}
+          <TextField
+            fullWidth
+            select
+            label="Station"
             value={newEvt.stationId}
             onChange={(e) => setNewEvt({ ...newEvt, stationId: e.target.value })}
-            sx={{ mt: 1, mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Factory ID"
-            value={newEvt.factoryId}
-            onChange={(e) => setNewEvt({ ...newEvt, factoryId: e.target.value })}
-            sx={{ mb: 2 }}
-          />
-          <TextField
-            fullWidth
-            label="Block ID"
-            value={newEvt.blockId}
-            onChange={(e) => setNewEvt({ ...newEvt, blockId: e.target.value })}
-          />
+            disabled={!newEvt.factoryId}
+          >
+            <MenuItem value="">— Select Station —</MenuItem>
+            {filteredStations.map((s) => (
+              <MenuItem key={s.stationId} value={String(s.stationId)}>
+                {s.stationName} (Block {s.blockId})
+              </MenuItem>
+            ))}
+          </TextField>
         </DialogContent>
         <DialogActions sx={{ p: 3, pt: 0 }}>
           <Button onClick={() => setCreateOpen(false)} sx={{ color: '#888' }}>

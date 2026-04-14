@@ -44,9 +44,11 @@ public class AnalyticsService {
         Long totalThisWeek = eventRepository.countEventsSince(weekStart);
         Long openEvents = eventRepository.countByStatus(EventStatus.OPEN);
         Long escalatedEvents = eventRepository.countByStatus(EventStatus.ESCALATED);
+        Long autoDispatchedEvents = eventRepository.countByStatus(EventStatus.AUTO_DISPATCHED);
+        Long resolvedEvents = eventRepository.countByStatus(EventStatus.RESOLVED);
 
-        // Mean ack time
-        Double meanAckTime = ackRepository.findAverageAckTime(weekStart, LocalDateTime.now());
+        // Mean ack time — use overall (not just this week) for better accuracy
+        Double meanAckTime = ackRepository.findAverageAckTimeOverall();
 
         // Events by severity
         Map<String, Long> eventsBySeverity = new LinkedHashMap<>();
@@ -62,12 +64,28 @@ public class AnalyticsService {
                         e -> ShiftUtil.getShift(e.getPressedAt()).name(),
                         Collectors.counting()));
 
-        // High risk stations
+        // Events by status
+        Map<String, Long> eventsByStatus = new LinkedHashMap<>();
+        eventsByStatus.put("OPEN", openEvents);
+        eventsByStatus.put("ESCALATED", escalatedEvents);
+        eventsByStatus.put("AUTO_DISPATCHED", autoDispatchedEvents);
+        eventsByStatus.put("RESOLVED", resolvedEvents);
+        eventsByStatus.put("ACKNOWLEDGED", eventRepository.countByStatus(EventStatus.ACKNOWLEDGED));
+
+        // High risk stations — return full DTOs
         List<Object[]> stationStats = eventRepository.findStationEventStats();
-        List<String> highRiskStations = stationStats.stream()
-                .filter(row -> ((Double) row[3]) > 50.0)
-                .limit(5)
-                .map(row -> (String) row[1])
+        List<StationRiskDTO> highRiskStations = stationStats.stream()
+                .limit(10)
+                .map(row -> {
+                    int avgScore = ((Double) row[3]).intValue();
+                    return StationRiskDTO.builder()
+                            .stationId((Long) row[0])
+                            .stationName((String) row[1])
+                            .eventCount((Long) row[2])
+                            .riskScore(avgScore)
+                            .riskLevel(RiskScoreUtil.toRiskLevel(avgScore).name())
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return DashboardSummaryDTO.builder()
@@ -75,9 +93,12 @@ public class AnalyticsService {
                 .totalEventsThisWeek(totalThisWeek)
                 .openEvents(openEvents)
                 .escalatedEvents(escalatedEvents)
+                .autoDispatchedEvents(autoDispatchedEvents)
+                .resolvedEvents(resolvedEvents)
                 .meanAckTimeSeconds(meanAckTime != null ? meanAckTime : 0.0)
                 .eventsBySeverity(eventsBySeverity)
                 .eventsByShift(eventsByShift)
+                .eventsByStatus(eventsByStatus)
                 .highRiskStations(highRiskStations)
                 .build();
     }

@@ -49,12 +49,26 @@ export default function App() {
                 <Route path="/dashboard" element={<DashboardPage />} />
                 <Route path="/stations" element={<StationsPage />} />
                 <Route path="/stations/:id" element={<StationDetailPage />} />
-                <Route path="/events" element={<EventsPage />} />
-                <Route path="/events/:id" element={<EventDetailPage />} />
+                <Route
+                  path="/events"
+                  element={
+                    <ProtectedRoute roles={['OPERATOR', 'SUPERVISOR']}>
+                      <EventsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/events/:id"
+                  element={
+                    <ProtectedRoute roles={['OPERATOR', 'SUPERVISOR']}>
+                      <EventDetailPage />
+                    </ProtectedRoute>
+                  }
+                />
                 <Route
                   path="/analytics"
                   element={
-                    <ProtectedRoute roles={['SUPERVISOR']}>
+                    <ProtectedRoute roles={['SUPERVISOR', 'AUDITOR']}>
                       <AnalyticsPage />
                     </ProtectedRoute>
                   }

@@ -126,10 +126,13 @@ export interface DashboardSummary {
   totalEventsThisWeek: number;
   openEvents: number;
   escalatedEvents: number;
+  autoDispatchedEvents: number;
+  resolvedEvents: number;
   meanAckTimeSeconds: number;
   eventsBySeverity: Record<string, number>;
   eventsByShift: Record<string, number>;
-  highRiskStations: string[];
+  eventsByStatus: Record<string, number>;
+  highRiskStations: StationRiskDTO[];
 }
 
 export interface FrequencyDTO {
@@ -190,4 +193,18 @@ export interface DispatchDTO {
   triggerReason: string;
   responseStatus: string;
   notes: string;
+}
+
+/* ───────────────────── Factory Dropdowns ───────────────────── */
+
+export interface FactoryDTO {
+  factoryId: string;
+  factoryName: string;
+  location: string;
+}
+
+export interface FactoryStationDTO {
+  stationId: number;
+  stationName: string;
+  blockId: string;
 }

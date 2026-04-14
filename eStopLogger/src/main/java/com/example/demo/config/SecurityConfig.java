@@ -43,20 +43,24 @@ public class SecurityConfig {
                 // Dataset endpoints — SUPERVISOR only
                 .requestMatchers("/api/datasets/**").hasRole("SUPERVISOR")
 
-                // Analytics endpoints — SUPERVISOR only
-                .requestMatchers("/api/analytics/**").hasAnyRole("SUPERVISOR","OPERATOR")
+                // Analytics endpoints — all authenticated (dashboard needs summary)
+                .requestMatchers("/api/analytics/**").authenticated()
 
                 // Audit endpoints — AUDITOR only
                 .requestMatchers("/api/audit/**").hasRole("AUDITOR")
 
+                // Resolve (close ticket) — SUPERVISOR only
+                .requestMatchers(HttpMethod.POST, "/api/acknowledgements/*/resolve").hasRole("SUPERVISOR")
+
                 // Acknowledgement — OPERATOR or SUPERVISOR
-                .requestMatchers(HttpMethod.POST, "/api/events/*/acknowledge").hasAnyRole("OPERATOR", "SUPERVISOR")
+                .requestMatchers("/api/acknowledgements/**").hasAnyRole("OPERATOR", "SUPERVISOR")
 
                 // Event endpoints — OPERATOR and SUPERVISOR
                 .requestMatchers("/api/events/**").hasAnyRole("OPERATOR", "SUPERVISOR")
 
-                // Station endpoints — any authenticated user
+                // Station + Factory endpoints — any authenticated user
                 .requestMatchers("/api/stations/**").authenticated()
+                .requestMatchers("/api/factories/**").authenticated()
 
                 // Everything else requires authentication
                 .anyRequest().authenticated()

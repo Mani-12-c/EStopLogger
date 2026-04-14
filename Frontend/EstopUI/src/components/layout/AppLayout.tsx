@@ -45,12 +45,17 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
   { label: 'Stations', path: '/stations', icon: <StationIcon /> },
-  { label: 'Events', path: '/events', icon: <EventIcon /> },
+  {
+    label: 'Events',
+    path: '/events',
+    icon: <EventIcon />,
+    roles: ['OPERATOR', 'SUPERVISOR'],
+  },
   {
     label: 'Analytics',
     path: '/analytics',
     icon: <AnalyticsIcon />,
-    roles: ['SUPERVISOR'],
+    roles: ['SUPERVISOR', 'AUDITOR'],
   },
   {
     label: 'Audit Logs',
