@@ -19,12 +19,12 @@ public interface AcknowledgementRepository extends JpaRepository<Acknowledgement
 
     @Query(value = "SELECT AVG(TIMESTAMPDIFF(SECOND, e.pressed_at, a.acknowledged_at)) " +
            "FROM acknowledgement a JOIN estop_event e ON a.event_id = e.event_id " +
-           "WHERE a.acknowledged_at BETWEEN :from AND :to", nativeQuery = true)
+           "WHERE a.acknowledged_at BETWEEN :from AND :to and a.ack_within_threshold<> 0", nativeQuery = true)
     Double findAverageAckTime(@Param("from") LocalDateTime from,
                               @Param("to") LocalDateTime to);
 
     @Query(value = "SELECT AVG(TIMESTAMPDIFF(SECOND, e.pressed_at, a.acknowledged_at)) " +
-           "FROM acknowledgement a JOIN estop_event e ON a.event_id = e.event_id", nativeQuery = true)
+           "FROM acknowledgement a JOIN estop_event e ON a.event_id = e.event_id where  a.ack_within_threshold<> 0", nativeQuery = true)
     Double findAverageAckTimeOverall();
 
     @Query(value = "SELECT AVG(TIMESTAMPDIFF(SECOND, e.pressed_at, a.acknowledged_at)) " +
