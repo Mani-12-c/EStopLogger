@@ -51,9 +51,12 @@ public class SimulationService {
             try {
                 Station station = stations.get(random.nextInt(stations.size()));
 
-                // Vary the time: distribute events across a realistic window
-                LocalDateTime pressedAt = baseTime.minusHours(random.nextInt(24))
-                        .plusMinutes(random.nextInt(60));
+                // Generate events within today's working hours (06:00–18:00)
+                // so they overlap with seeded scheduled work
+                int hourOffset = random.nextInt(12); // 0-11 hours after 06:00
+                int minuteOffset = random.nextInt(60);
+                LocalDateTime pressedAt = baseTime.toLocalDate()
+                        .atTime(6 + hourOffset, minuteOffset);
 
                 EStopEventDTO dto = EStopEventDTO.builder()
                         .stationId(station.getStationId())

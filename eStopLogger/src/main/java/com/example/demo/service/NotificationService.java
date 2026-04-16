@@ -52,14 +52,15 @@ public class NotificationService {
      */
     @Transactional
     public void alertSupervisor(EStopEvent event) {
+        String notes = buildDispatchNotes(event, event.getCorrelatedWork());
+
         DispatchLog dispatch = DispatchLog.builder()
                 .event(event)
                 .dispatchType(DispatchType.SUPERVISOR_ALERT)
                 .dispatchedAt(LocalDateTime.now())
                 .triggerReason("Unacknowledged event for >2 minutes")
                 .responseStatus(ResponseStatus.DISPATCHED)
-                .notes("Supervisor alert for event " + event.getEventId()
-                        + " at station " + event.getStation().getStationName())
+                .notes(notes)
                 .build();
 
         dispatchLogRepository.save(dispatch);

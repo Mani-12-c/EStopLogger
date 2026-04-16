@@ -1,6 +1,7 @@
 package com.example.demo.util;
 
 import com.example.demo.model.enums.RiskLevel;
+import com.example.demo.model.enums.Severity;
 
 public final class RiskScoreUtil {
 
@@ -66,5 +67,16 @@ public final class RiskScoreUtil {
         if (riskScore <= 50) return RiskLevel.MEDIUM;
         if (riskScore <= 75) return RiskLevel.HIGH;
         return RiskLevel.CRITICAL;
+    }
+
+    /**
+     * Converts a numeric risk score to a Severity enum.
+     * Uses same thresholds as toRiskLevel.
+     */
+    public static Severity toSeverity(int riskScore) {
+        if (riskScore <= 25) return Severity.LOW;
+        if (riskScore <= 50) return Severity.MEDIUM;
+        if (riskScore <= 75) return Severity.HIGH;
+        return Severity.CRITICAL;
     }
 }

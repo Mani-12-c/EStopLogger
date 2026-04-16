@@ -82,4 +82,21 @@ public interface EStopEventRepository extends JpaRepository<EStopEvent, Long> {
            "WHERE e.isRapidSequence = true AND e.pressedAt >= :since " +
            "GROUP BY e.station.stationId")
     List<Object[]> countRapidSequenceByStationSince(@Param("since") LocalDateTime since);
+
+    /**
+     * Weekly risk score trend for a station: returns [weekLabel, avgRiskScore]
+     * grouped by week. Uses a subquery to satisfy ONLY_FULL_GROUP_BY.
+     */
+    @Query(value = "SELECT CONCAT('W', LPAD(yw % 100, 2, '0'), ' ', DATE_FORMAT(min_date, '%b %d')) AS week_label, " +
+           "avg_score AS avg_risk_score FROM (" +
+           "  SELECT YEARWEEK(e.pressed_at, 3) AS yw, " +
+           "  MIN(e.pressed_at) AS min_date, " +
+           "  ROUND(AVG(e.risk_score)) AS avg_score " +
+           "  FROM estop_event e " +
+           "  WHERE e.station_id = :stationId AND e.pressed_at >= :since " +
+           "  GROUP BY YEARWEEK(e.pressed_at, 3)" +
+           ") sub ORDER BY yw ASC",
+           nativeQuery = true)
+    List<Object[]> findWeeklyRiskTrendByStation(@Param("stationId") Long stationId,
+                                                 @Param("since") LocalDateTime since);
 }

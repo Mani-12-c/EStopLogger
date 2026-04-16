@@ -2,6 +2,7 @@ package com.example.demo.controller;
 
 import com.example.demo.model.dto.*;
 import com.example.demo.service.AnalyticsService;
+import com.example.demo.repository.EStopEventRepository;
 import com.example.demo.repository.RiskScoreHistoryRepository;
 import com.example.demo.model.entity.RiskScoreHistory;
 import io.swagger.v3.oas.annotations.Operation;
@@ -25,12 +26,15 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
     private final RiskScoreHistoryRepository riskScoreHistoryRepository;
+    private final EStopEventRepository eventRepository;
 
     @Autowired
     public AnalyticsController(AnalyticsService analyticsService,
-                               RiskScoreHistoryRepository riskScoreHistoryRepository) {
+                               RiskScoreHistoryRepository riskScoreHistoryRepository,
+                               EStopEventRepository eventRepository) {
         this.analyticsService = analyticsService;
         this.riskScoreHistoryRepository = riskScoreHistoryRepository;
+        this.eventRepository = eventRepository;
     }
 
     @GetMapping("/summary")
@@ -84,13 +88,26 @@ public class AnalyticsController {
     public ResponseEntity<ApiResponse<List<FrequencyDTO>>> getRiskTrend(
             @RequestParam Long stationId,
             @RequestParam(defaultValue = "12") int weeks) {
-        int currentWeek = LocalDate.now().get(WeekFields.of(Locale.getDefault()).weekOfYear());
-        int fromWeek = currentWeek - weeks;
 
-        List<FrequencyDTO> trend = riskScoreHistoryRepository
-                .findByStationAndWeekRange(stationId, fromWeek).stream()
-                .map(r -> new FrequencyDTO("Week " + r.getWeekNumber(), (long) r.getRiskScore()))
+        LocalDateTime since = LocalDate.now().minusWeeks(weeks).atStartOfDay();
+
+        // Aggregate directly from estop_event: AVG(risk_score) grouped by week
+        List<FrequencyDTO> trend = eventRepository
+                .findWeeklyRiskTrendByStation(stationId, since).stream()
+                .map(row -> new FrequencyDTO(
+                        (String) row[0],                          // week label e.g. "W15 Apr 07"
+                        ((Number) row[1]).longValue()))            // avg risk score
                 .collect(Collectors.toList());
+
+        // Fallback: if no event-based data, try the pre-computed history table
+        if (trend.isEmpty()) {
+            int currentWeek = LocalDate.now().get(WeekFields.of(Locale.getDefault()).weekOfYear());
+            int fromWeek = currentWeek - weeks;
+            trend = riskScoreHistoryRepository
+                    .findByStationAndWeekRange(stationId, fromWeek).stream()
+                    .map(r -> new FrequencyDTO("Week " + r.getWeekNumber(), (long) r.getRiskScore()))
+                    .collect(Collectors.toList());
+        }
 
         return ResponseEntity.ok(ApiResponse.success(trend));
     }

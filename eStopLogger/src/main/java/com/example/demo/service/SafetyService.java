@@ -9,6 +9,7 @@ import com.example.demo.model.enums.Severity;
 import com.example.demo.repository.EStopEventRepository;
 import com.example.demo.repository.FactoryRepository;
 import com.example.demo.repository.StationRepository;
+import com.example.demo.util.RiskScoreUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -126,9 +127,10 @@ public class SafetyService {
                     correlatedWork.getWorkType() + " work in progress at station");
         }
 
-        // 4. Calculate risk score
+        // 4. Calculate risk score and set severity to match
         int riskScore = riskScoringService.calculateRiskScore(event);
         event.setRiskScore(riskScore);
+        event.setSeverity(RiskScoreUtil.toSeverity(riskScore));
 
         event = eventRepository.save(event);
 

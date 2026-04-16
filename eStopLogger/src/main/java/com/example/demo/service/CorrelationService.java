@@ -27,6 +27,7 @@ public class CorrelationService {
      * Returns the most relevant (highest risk) scheduled work, or null if none.
      */
     public ScheduledWork correlate(EStopEvent event) {
+        // 1. Try exact time overlap: pressedAt falls between work start & end
         List<ScheduledWork> overlappingWork = scheduledWorkRepository.findOverlappingWork(
                 event.getStation().getStationId(),
                 event.getFactory().getFactoryId(),
@@ -34,7 +35,18 @@ public class CorrelationService {
                 event.getPressedAt());
 
         if (overlappingWork.isEmpty()) {
-            log.debug("No scheduled work overlap for event {} at station {}",
+            // 2. Fallback: find work at the same station on the same day
+            //    (covers cases where event time is slightly outside the work window)
+            overlappingWork = scheduledWorkRepository.findSameDayWork(
+                    event.getStation().getStationId(),
+                    event.getFactory().getFactoryId(),
+                    event.getBlockId(),
+                    event.getPressedAt().toLocalDate().atStartOfDay(),
+                    event.getPressedAt().toLocalDate().atTime(23, 59, 59));
+        }
+
+        if (overlappingWork.isEmpty()) {
+            log.debug("No scheduled work found for event {} at station {}",
                     event.getEventId(), event.getStation().getStationId());
             return null;
         }

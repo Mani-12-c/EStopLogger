@@ -64,6 +64,9 @@ export default function EventDetailPage() {
   const [timeline, setTimeline] = useState<EventTimelineDTO | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Extract work type: prefer event.workType, fallback to parsing dispatch notes
+ 
+
   // Ack dialog
   const [ackOpen, setAckOpen] = useState(false);
   const [ackForm, setAckForm] = useState<AckRequest>({
@@ -77,6 +80,16 @@ export default function EventDetailPage() {
   const [pressingAgain, setPressingAgain] = useState(false);
   const [ackDetails, setAckDetails] = useState<AckResponse | null>(null);
 
+   const extractedWorkType = (() => {
+    if (event?.workType) return event.workType;
+    for (const d of dispatches) {
+      if (d.notes) {
+        const match = d.notes.match(/Work Type:\s*([^,]+)/);
+        if (match) return match[1].trim();
+      }
+    }
+    return null;
+  })();
   useEffect(() => {
     if (!id) return;
     Promise.all([
@@ -294,7 +307,7 @@ export default function EventDetailPage() {
                 CORRELATED WORK
               </Typography>
               <Typography variant="body1" sx={{ fontWeight: 600, mt: 0.5 }}>
-                {event.workType || 'None'}
+                {extractedWorkType || 'None'}
               </Typography>
             </CardContent>
           </Card>

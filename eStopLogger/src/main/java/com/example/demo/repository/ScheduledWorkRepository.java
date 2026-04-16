@@ -20,6 +20,20 @@ public interface ScheduledWorkRepository extends JpaRepository<ScheduledWork, Lo
                                             @Param("blockId") String blockId,
                                             @Param("pressedAt") LocalDateTime pressedAt);
 
+    /**
+     * Fallback: find work at the same station/factory/block on the same day,
+     * even if pressedAt doesn't fall exactly within the work window.
+     */
+    @Query("SELECT sw FROM ScheduledWork sw WHERE " +
+           "(sw.station.stationId = :stationId OR (sw.factory.factoryId = :factoryId AND sw.blockId = :blockId)) " +
+           "AND sw.startTime >= :dayStart AND sw.endTime <= :dayEnd " +
+           "ORDER BY sw.riskLevel DESC")
+    List<ScheduledWork> findSameDayWork(@Param("stationId") Long stationId,
+                                        @Param("factoryId") String factoryId,
+                                        @Param("blockId") String blockId,
+                                        @Param("dayStart") LocalDateTime dayStart,
+                                        @Param("dayEnd") LocalDateTime dayEnd);
+
     List<ScheduledWork> findByStation_StationId(Long stationId);
 
     @Query("SELECT sw FROM ScheduledWork sw WHERE sw.startTime <= :now AND sw.endTime >= :now")

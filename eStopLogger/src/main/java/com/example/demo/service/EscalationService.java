@@ -6,6 +6,7 @@ import com.example.demo.model.enums.EventStatus;
 import com.example.demo.model.enums.HmiState;
 import com.example.demo.model.enums.Severity;
 import com.example.demo.repository.EStopEventRepository;
+import com.example.demo.util.RiskScoreUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -70,11 +71,17 @@ public class EscalationService {
         ScheduledWork work = event.getCorrelatedWork();
         if (work == null) {
             work = correlationService.correlate(event);
+            if (work != null) {
+                event.setCorrelatedWork(work);
+            }
         }
 
         // Auto-dispatch since no one acknowledged within the threshold
         event.setEventStatus(EventStatus.AUTO_DISPATCHED);
-        event.setSeverity(Severity.CRITICAL);
+
+        // Escalation bumps severity to at least HIGH; keep CRITICAL if risk score already warrants it
+        Severity scoreSeverity = RiskScoreUtil.toSeverity(event.getRiskScore());
+        event.setSeverity(scoreSeverity.ordinal() >= Severity.HIGH.ordinal() ? scoreSeverity : Severity.HIGH);
 
         String reason = "Unacknowledged E-Stop event for >2 minutes";
         if (work != null) {
