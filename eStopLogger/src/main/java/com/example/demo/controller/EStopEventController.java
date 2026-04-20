@@ -145,6 +145,10 @@ public class EStopEventController {
                 .factoryName(event.getFactory().getFactoryName())
                 .workType(event.getCorrelatedWork() != null
                         ? event.getCorrelatedWork().getWorkType() : null)
+                .probableEmergency(event.getCorrelatedWork() != null
+                        ? event.getCorrelatedWork().getProbableEmergency() : null)
+                .instantHelp(event.getCorrelatedWork() != null
+                        ? event.getCorrelatedWork().getInstantHelp() : null)
                 .createdAt(event.getCreatedAt())
                 .build();
     }

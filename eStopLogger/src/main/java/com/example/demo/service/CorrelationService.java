@@ -46,6 +46,13 @@ public class CorrelationService {
         }
 
         if (overlappingWork.isEmpty()) {
+            // 3. Final fallback: find ANY scheduled work at this station (regardless of date)
+            //    Picks the highest-risk work — covers CSV data with mismatched dates
+            overlappingWork = scheduledWorkRepository.findByStation_StationId(
+                    event.getStation().getStationId());
+        }
+
+        if (overlappingWork.isEmpty()) {
             log.debug("No scheduled work found for event {} at station {}",
                     event.getEventId(), event.getStation().getStationId());
             return null;

@@ -9,7 +9,6 @@ import com.example.demo.model.enums.Severity;
 import com.example.demo.repository.EStopEventRepository;
 import com.example.demo.repository.FactoryRepository;
 import com.example.demo.repository.StationRepository;
-import com.example.demo.util.RiskScoreUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -119,31 +118,21 @@ public class SafetyService {
             return event;
         }
 
-        // 3. Correlate with scheduled work
-        ScheduledWork correlatedWork = correlationService.correlate(event);
-        if (correlatedWork != null) {
-            event.setCorrelatedWork(correlatedWork);
-            auditService.logAction(event, "CORRELATION_DETECTED", null,
-                    correlatedWork.getWorkType() + " work in progress at station");
-        }
-
-        // 4. Calculate risk score and set severity to match
-        int riskScore = riskScoringService.calculateRiskScore(event);
-        event.setRiskScore(riskScore);
-        event.setSeverity(RiskScoreUtil.toSeverity(riskScore));
-
+        // 3. Save event as OPEN with default MEDIUM severity
+        //    Correlation with scheduled work + risk scoring + dispatch
+        //    only happens after the 2-minute escalation threshold (EscalationService)
         event = eventRepository.save(event);
 
-        // 5. Update HMI state to RED
+        // 4. Update HMI state to RED
         hmiService.updateState(station.getStationId(), HmiState.RED);
 
-        // 6. Audit log
+        // 5. Audit log
         auditService.logAction(event, "E-STOP_PRESSED", null,
                 String.format("Station %s, Block %s, Factory %s",
                         station.getStationName(), dto.getBlockId(), factory.getFactoryName()));
 
-        log.info("E-Stop event processed: eventId={}, stationId={}, status={}, riskScore={}",
-                event.getEventId(), station.getStationId(), event.getEventStatus(), riskScore);
+        log.info("E-Stop event processed: eventId={}, stationId={}, status=OPEN, severity=MEDIUM",
+                event.getEventId(), station.getStationId());
 
         return event;
     }

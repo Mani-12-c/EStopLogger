@@ -21,6 +21,7 @@ public class EscalationService {
 
     private final EStopEventRepository eventRepository;
     private final CorrelationService correlationService;
+    private final RiskScoringService riskScoringService;
     private final NotificationService notificationService;
     private final HmiService hmiService;
     private final AuditService auditService;
@@ -28,11 +29,13 @@ public class EscalationService {
     @Autowired
     public EscalationService(EStopEventRepository eventRepository,
                              CorrelationService correlationService,
+                             RiskScoringService riskScoringService,
                              NotificationService notificationService,
                              HmiService hmiService,
                              AuditService auditService) {
         this.eventRepository = eventRepository;
         this.correlationService = correlationService;
+        this.riskScoringService = riskScoringService;
         this.notificationService = notificationService;
         this.hmiService = hmiService;
         this.auditService = auditService;
@@ -76,11 +79,15 @@ public class EscalationService {
             }
         }
 
+        // Calculate risk score now that work is correlated
+        int riskScore = riskScoringService.calculateRiskScore(event);
+        event.setRiskScore(riskScore);
+
         // Auto-dispatch since no one acknowledged within the threshold
         event.setEventStatus(EventStatus.AUTO_DISPATCHED);
 
-        // Escalation bumps severity to at least HIGH; keep CRITICAL if risk score already warrants it
-        Severity scoreSeverity = RiskScoreUtil.toSeverity(event.getRiskScore());
+        // Escalation bumps severity to at least HIGH; keep CRITICAL if risk score warrants it
+        Severity scoreSeverity = RiskScoreUtil.toSeverity(riskScore);
         event.setSeverity(scoreSeverity.ordinal() >= Severity.HIGH.ordinal() ? scoreSeverity : Severity.HIGH);
 
         String reason = "Unacknowledged E-Stop event for >2 minutes";

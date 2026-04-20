@@ -309,6 +309,16 @@ export default function EventDetailPage() {
               <Typography variant="body1" sx={{ fontWeight: 600, mt: 0.5 }}>
                 {extractedWorkType || 'None'}
               </Typography>
+              {event.probableEmergency && (
+                <Typography variant="caption" sx={{ color: '#EF4444', display: 'block', mt: 0.5 }}>
+                  ⚠ {event.probableEmergency}
+                </Typography>
+              )}
+              {event.instantHelp && (
+                <Typography variant="caption" sx={{ color: '#3B82F6', display: 'block', mt: 0.3 }}>
+                  🚨 {event.instantHelp}
+                </Typography>
+              )}
             </CardContent>
           </Card>
         </Grid>

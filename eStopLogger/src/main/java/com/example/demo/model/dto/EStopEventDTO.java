@@ -31,5 +31,7 @@ public class EStopEventDTO {
     private String stationName;
     private String factoryName;
     private String workType;
+    private String probableEmergency;
+    private String instantHelp;
     private LocalDateTime createdAt;
 }

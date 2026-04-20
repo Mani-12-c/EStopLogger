@@ -98,6 +98,8 @@ export interface EStopEventDTO {
   stationName?: string;
   factoryName?: string;
   workType?: string;
+  probableEmergency?: string;
+  instantHelp?: string;
   createdAt?: string;
 }
 
