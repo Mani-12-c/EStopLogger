@@ -30,8 +30,8 @@ export default function App() {
         autoHideDuration={4000}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
       >
-        <AuthProvider>
-          <BrowserRouter>
+        <BrowserRouter>
+          <AuthProvider>
             <Suspense fallback={<PageLoader />}>
               <Routes>
               {/* Public */}
@@ -96,8 +96,8 @@ export default function App() {
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
             </Suspense>
-          </BrowserRouter>
-        </AuthProvider>
+          </AuthProvider>
+        </BrowserRouter>
       </SnackbarProvider>
     </ThemeProvider>
   );

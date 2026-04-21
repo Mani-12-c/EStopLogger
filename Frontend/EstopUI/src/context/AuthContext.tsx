@@ -6,6 +6,7 @@ import {
   type ReactNode,
 } from 'react';
 import type { LoginResponse, UserRole } from '../types';
+import { useNavigate } from 'react-router-dom';
 
 interface AuthState {
   token: string | null;
@@ -32,7 +33,7 @@ function loadState(): AuthState {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(loadState);
-
+  const navigate = useNavigate();
   const login = useCallback((data: LoginResponse) => {
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data));
@@ -43,6 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setState({ token: null, user: null });
+    navigate('/login');
   }, []);
 
   const hasRole = useCallback(

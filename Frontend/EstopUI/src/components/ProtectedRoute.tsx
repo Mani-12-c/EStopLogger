@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useAccount } from '../hooks/useAccount';
 import type { UserRole } from '../types';
 
 interface Props {
@@ -8,9 +9,11 @@ interface Props {
 }
 
 export default function ProtectedRoute({ children, roles }: Props) {
-  const { isAuthenticated, hasRole } = useAuth();
+  const { hasRole } = useAuth();
+  const { isAuthenticated, isExpired } = useAccount();
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  // Token missing or expired → redirect to login
+  if (!isAuthenticated || isExpired) return <Navigate to="/login" replace />;
   if (roles && roles.length > 0 && !hasRole(...roles))
     return <Navigate to="/dashboard" replace />;
 
