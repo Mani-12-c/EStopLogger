@@ -14,6 +14,7 @@ import {
   TableRow,
   LinearProgress,
   Chip,
+  useTheme,
 } from '@mui/material';
 import {
   Warning as EventIcon,
@@ -83,6 +84,20 @@ const RISK_COLORS: Record<string, string> = {
 
 export default function DashboardPage() {
   const { hasRole } = useAuth();
+  const muiTheme = useTheme();
+  const isDark = muiTheme.palette.mode === 'dark';
+
+  // Chart helpers — adapt to current theme
+  const axisTickColor = muiTheme.palette.text.secondary;
+  const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(15,23,42,0.07)';
+  const tooltipStyle = {
+    background: isDark ? '#1E293B' : '#FFFFFF',
+    border: `1px solid ${muiTheme.palette.divider}`,
+    borderRadius: 8,
+    color: muiTheme.palette.text.primary,
+    fontSize: 12,
+  };
+  const legendColor = muiTheme.palette.text.secondary;
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [openEvents, setOpenEvents] = useState<EStopEventDTO[]>([]);
   const [stations, setStations] = useState<StationStatusDTO[]>([]);
@@ -182,7 +197,7 @@ export default function DashboardPage() {
       <Typography variant="h4" sx={{ mb: 0.5 }}>
         Dashboard
       </Typography>
-      <Typography variant="body2" sx={{ mb: 3, color: '#666' }}>
+      <Typography variant="body2" sx={{ mb: 3, color: 'text.secondary' }}>
         Real-time overview of your safety monitoring system
       </Typography>
 
@@ -265,7 +280,7 @@ export default function DashboardPage() {
               <Box sx={{ height: 240 }}>
                 {severityData.length === 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                    <Typography variant="body2" sx={{ color: '#555' }}>No data</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>No data</Typography>
                   </Box>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -275,8 +290,8 @@ export default function DashboardPage() {
                           <Cell key={entry.name} fill={SEVERITY_COLORS[entry.name] || '#666'} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#FFF' }} />
-                      <Legend formatter={(value) => <span style={{ color: '#AAA', fontSize: 12 }}>{value}</span>} />
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Legend formatter={(value) => <span style={{ color: legendColor, fontSize: 12 }}>{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -295,15 +310,15 @@ export default function DashboardPage() {
               <Box sx={{ height: 240 }}>
                 {shiftData.length === 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                    <Typography variant="body2" sx={{ color: '#555' }}>No data</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>No data</Typography>
                   </Box>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={shiftData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="name" tick={{ fill: '#888', fontSize: 11 }} axisLine={false} />
-                      <YAxis tick={{ fill: '#888', fontSize: 11 }} axisLine={false} />
-                      <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#FFF' }} />
+                      <XAxis dataKey="name" tick={{ fill: axisTickColor, fontSize: 11 }} axisLine={false} />
+                      <YAxis tick={{ fill: axisTickColor, fontSize: 11 }} axisLine={false} />
+                      <Tooltip contentStyle={tooltipStyle} />
                       <Bar dataKey="value" radius={[6, 6, 0, 0]}>
                         {shiftData.map((entry) => (
                           <Cell key={entry.name} fill={SHIFT_COLORS[entry.name] || '#666'} />
@@ -327,7 +342,7 @@ export default function DashboardPage() {
               <Box sx={{ height: 240 }}>
                 {statusData.length === 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                    <Typography variant="body2" sx={{ color: '#555' }}>No data</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>No data</Typography>
                   </Box>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -337,8 +352,8 @@ export default function DashboardPage() {
                           <Cell key={entry.name} fill={STATUS_COLORS[entry.name] || '#666'} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#FFF' }} />
-                      <Legend formatter={(value) => <span style={{ color: '#AAA', fontSize: 12 }}>{value}</span>} />
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Legend formatter={(value) => <span style={{ color: legendColor, fontSize: 12 }}>{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -360,7 +375,7 @@ export default function DashboardPage() {
               <Box sx={{ height: 280 }}>
                 {hmiData.length === 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                    <Typography variant="body2" sx={{ color: '#555' }}>No stations</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>No stations</Typography>
                   </Box>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -370,8 +385,8 @@ export default function DashboardPage() {
                           <Cell key={entry.name} fill={HMI_COLORS[entry.name] || '#666'} />
                         ))}
                       </Pie>
-                      <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#FFF' }} />
-                      <Legend formatter={(value) => <span style={{ color: '#AAA', fontSize: 12 }}>{value}</span>} />
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Legend formatter={(value) => <span style={{ color: legendColor, fontSize: 12 }}>{value}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
                 )}
@@ -390,7 +405,7 @@ export default function DashboardPage() {
               <Box sx={{ height: 280 }}>
                 {frequency.length === 0 ? (
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
-                    <Typography variant="body2" sx={{ color: '#555' }}>No data for this period</Typography>
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>No data for this period</Typography>
                   </Box>
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
@@ -402,9 +417,9 @@ export default function DashboardPage() {
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                      <XAxis dataKey="label" tick={{ fill: '#888', fontSize: 11 }} axisLine={false} />
-                      <YAxis tick={{ fill: '#888', fontSize: 11 }} axisLine={false} />
-                      <Tooltip contentStyle={{ background: '#1A1A1A', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, color: '#FFF' }} />
+                      <XAxis dataKey="label" tick={{ fill: axisTickColor, fontSize: 11 }} axisLine={false} />
+                      <YAxis tick={{ fill: axisTickColor, fontSize: 11 }} axisLine={false} />
+                      <Tooltip contentStyle={tooltipStyle} />
                       <Area type="monotone" dataKey="count" stroke="#3B82F6" strokeWidth={2} fill="url(#freqGrad)" />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -425,7 +440,7 @@ export default function DashboardPage() {
                 ⚠ High Risk Stations
               </Typography>
               {(!summary?.highRiskStations || summary.highRiskStations.length === 0) ? (
-                <Typography variant="body2" sx={{ color: '#555', py: 4, textAlign: 'center' }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary', py: 4, textAlign: 'center' }}>
                   No risk data available
                 </Typography>
               ) : (
@@ -444,15 +459,15 @@ export default function DashboardPage() {
                       {summary.highRiskStations.map((s) => (
                         <TableRow key={s.stationId} hover>
                           <TableCell>
-                            <Typography variant="body2" sx={{ fontWeight: 600, color: '#FFF' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
                               {s.stationName}
                             </Typography>
                           </TableCell>
-                          <TableCell align="center" sx={{ color: '#AAA' }}>
-                            {s.eventCount}
+                          <TableCell align="center">
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>{s.eventCount}</Typography>
                           </TableCell>
                           <TableCell align="center">
-                            <Typography variant="body2" sx={{ fontWeight: 700, color: RISK_COLORS[s.riskLevel] || '#FFF' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 700, color: RISK_COLORS[s.riskLevel] || 'text.primary' }}>
                               {s.riskScore}
                             </Typography>
                           </TableCell>
@@ -462,7 +477,7 @@ export default function DashboardPage() {
                               size="small"
                               sx={{
                                 bgcolor: (RISK_COLORS[s.riskLevel] || '#666') + '22',
-                                color: RISK_COLORS[s.riskLevel] || '#666',
+                                color: RISK_COLORS[s.riskLevel] || 'text.secondary',
                                 fontWeight: 700,
                                 fontSize: '0.7rem',
                               }}
@@ -473,11 +488,11 @@ export default function DashboardPage() {
                               variant="determinate"
                               value={Math.min(s.riskScore, 100)}
                               sx={{
-                                height: 6,
+                                height: 5,
                                 borderRadius: 3,
-                                bgcolor: 'rgba(255,255,255,0.05)',
+                                bgcolor: 'action.hover',
                                 '& .MuiLinearProgress-bar': {
-                                  bgcolor: RISK_COLORS[s.riskLevel] || '#666',
+                                  bgcolor: RISK_COLORS[s.riskLevel] || 'primary.main',
                                   borderRadius: 3,
                                 },
                               }}
@@ -503,7 +518,7 @@ export default function DashboardPage() {
                 </Typography>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                   {openEvents.length === 0 && (
-                    <Typography variant="body2" sx={{ color: '#666', py: 4, textAlign: 'center' }}>
+                    <Typography variant="body2" sx={{ color: 'text.secondary', py: 4, textAlign: 'center' }}>
                       No open events — all clear!
                     </Typography>
                   )}
@@ -515,16 +530,17 @@ export default function DashboardPage() {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         p: 1.5,
-                        borderRadius: 2,
-                        bgcolor: 'rgba(255,255,255,0.02)',
-                        border: '1px solid rgba(255,255,255,0.04)',
+                        borderRadius: 1.5,
+                        bgcolor: 'action.hover',
+                        border: '1px solid',
+                        borderColor: 'divider',
                       }}
                     >
                       <Box>
                         <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.8rem' }}>
                           {evt.stationName || `Station ${evt.stationId}`}
                         </Typography>
-                        <Typography variant="caption" sx={{ color: '#666' }}>
+                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                           {evt.pressedAt ? dayjs(evt.pressedAt).format('HH:mm:ss') : ''}
                           {evt.factoryName ? ` · ${evt.factoryName}` : ''}
                         </Typography>
@@ -541,3 +557,5 @@ export default function DashboardPage() {
     </Box>
   );
 }
+
+

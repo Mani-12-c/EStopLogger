@@ -21,13 +21,13 @@ export default function EmptyState({ icon, title, subtitle, action }: Props) {
       }}
     >
       {icon && (
-        <Box sx={{ color: '#333', mb: 1 }}>{icon}</Box>
+        <Box sx={{ color: 'text.disabled', mb: 1 }}>{icon}</Box>
       )}
-      <Typography variant="h6" sx={{ color: '#888', fontWeight: 600 }}>
+      <Typography variant="h6" sx={{ color: 'text.secondary', fontWeight: 600 }}>
         {title}
       </Typography>
       {subtitle && (
-        <Typography variant="body2" sx={{ color: '#555', maxWidth: 400, textAlign: 'center' }}>
+        <Typography variant="body2" sx={{ color: 'text.secondary', maxWidth: 400, textAlign: 'center' }}>
           {subtitle}
         </Typography>
       )}
@@ -35,3 +35,4 @@ export default function EmptyState({ icon, title, subtitle, action }: Props) {
     </Box>
   );
 }
+

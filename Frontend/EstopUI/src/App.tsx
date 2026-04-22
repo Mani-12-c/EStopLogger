@@ -1,8 +1,7 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, CssBaseline } from '@mui/material';
 import { SnackbarProvider } from 'notistack';
-import theme from './theme/theme';
+import { AppThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppLayout from './components/layout/AppLayout';
@@ -23,8 +22,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'));
 
 export default function App() {
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
+    <AppThemeProvider>
       <SnackbarProvider
         maxSnack={3}
         autoHideDuration={4000}
@@ -99,6 +97,6 @@ export default function App() {
           </AuthProvider>
         </BrowserRouter>
       </SnackbarProvider>
-    </ThemeProvider>
+    </AppThemeProvider>
   );
 }

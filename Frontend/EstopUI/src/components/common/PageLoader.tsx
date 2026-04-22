@@ -12,10 +12,11 @@ export default function PageLoader({ text = 'Loading…' }: { text?: string }) {
         gap: 2,
       }}
     >
-      <CircularProgress size={32} sx={{ color: '#FFF' }} />
-      <Typography variant="body2" sx={{ color: '#666' }}>
+      <CircularProgress size={32} color="primary" />
+      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
         {text}
       </Typography>
     </Box>
   );
 }
+

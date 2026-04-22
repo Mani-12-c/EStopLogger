@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
@@ -30,10 +30,13 @@ import {
   Logout as LogoutIcon,
   Person as PersonIcon,
   RadioButtonChecked as LogoIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
+import { useThemeMode } from '../../context/ThemeContext';
 
-const DRAWER_WIDTH = 260;
+const DRAWER_WIDTH = 256;
 
 interface NavItem {
   label: string;
@@ -43,36 +46,38 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-  { label: 'Stations', path: '/stations', icon: <StationIcon /> },
+  { label: 'Dashboard', path: '/dashboard', icon: <DashboardIcon fontSize="small" /> },
+  { label: 'Stations', path: '/stations', icon: <StationIcon fontSize="small" /> },
   {
     label: 'Events',
     path: '/events',
-    icon: <EventIcon />,
+    icon: <EventIcon fontSize="small" />,
     roles: ['OPERATOR', 'SUPERVISOR'],
   },
   {
     label: 'Analytics',
     path: '/analytics',
-    icon: <AnalyticsIcon />,
+    icon: <AnalyticsIcon fontSize="small" />,
     roles: ['SUPERVISOR', 'AUDITOR'],
   },
   {
     label: 'Audit Logs',
     path: '/audit',
-    icon: <AuditIcon />,
+    icon: <AuditIcon fontSize="small" />,
     roles: ['AUDITOR'],
   },
   {
     label: 'Datasets',
     path: '/datasets',
-    icon: <DatasetIcon />,
+    icon: <DatasetIcon fontSize="small" />,
     roles: ['SUPERVISOR'],
   },
 ];
 
 export default function AppLayout() {
   const theme = useTheme();
+  const { mode, toggle } = useThemeMode();
+  const isDark = mode === 'dark';
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
@@ -80,60 +85,58 @@ export default function AppLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Sync body class for CSS scrollbar variables
+  useEffect(() => {
+    document.body.classList.toggle('dark-mode', isDark);
+  }, [isDark]);
+
   const visibleNav = navItems.filter(
     (n) => !n.roles || n.roles.some((r) => hasRole(r as 'OPERATOR' | 'SUPERVISOR' | 'AUDITOR'))
   );
 
+  const activePrimary = theme.palette.primary.main;
+  const activeNavBg = isDark ? 'rgba(59,130,246,0.12)' : 'rgba(26,86,219,0.07)';
+  const hoverBg     = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.04)';
+
   const drawer = (
-    <Box
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      {/* Logo */}
-      <Box
-        sx={{
-          px: 2.5,
-          py: 2.5,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1.5,
-        }}
-      >
-        <LogoIcon sx={{ color: '#EF4444', fontSize: 28 }} />
-        <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.03em' }}>
-          E-STOP
-        </Typography>
+    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+      {/* ── Logo ── */}
+      <Box sx={{ px: 2.5, py: 2.5, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+        <LogoIcon sx={{ color: theme.palette.error.main, fontSize: 26 }} />
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1 }}>
+            E‑Stop
+          </Typography>
+          <Typography variant="caption" sx={{ color: 'text.secondary', letterSpacing: '0.04em' }}>
+            Safety Logger
+          </Typography>
+        </Box>
       </Box>
 
-      <Divider sx={{ mx: 2 }} />
+      <Divider />
 
-      {/* Nav */}
-      <List sx={{ flex: 1, px: 1.5, pt: 2 }}>
+      {/* ── Navigation ── */}
+      <List sx={{ flex: 1, px: 1.5, pt: 1.5 }}>
         {visibleNav.map((item) => {
           const active = location.pathname.startsWith(item.path);
           return (
             <ListItemButton
               key={item.path}
-              onClick={() => {
-                navigate(item.path);
-                if (isMobile) setMobileOpen(false);
-              }}
+              onClick={() => { navigate(item.path); if (isMobile) setMobileOpen(false); }}
               sx={{
-                borderRadius: 2,
+                borderRadius: 1.5,
                 mb: 0.5,
-                px: 2,
-                py: 1.2,
-                bgcolor: active ? 'rgba(255,255,255,0.08)' : 'transparent',
-                '&:hover': { bgcolor: 'rgba(255,255,255,0.05)' },
+                px: 1.75,
+                py: 1,
+                bgcolor: active ? activeNavBg : 'transparent',
+                borderLeft: active ? `3px solid ${activePrimary}` : '3px solid transparent',
+                '&:hover': { bgcolor: active ? activeNavBg : hoverBg },
               }}
             >
               <ListItemIcon
                 sx={{
-                  minWidth: 40,
-                  color: active ? '#FFF' : '#666',
+                  minWidth: 36,
+                  color: active ? activePrimary : 'text.secondary',
                 }}
               >
                 {item.icon}
@@ -145,42 +148,49 @@ export default function AppLayout() {
                     sx: {
                       fontSize: '0.875rem',
                       fontWeight: active ? 600 : 400,
-                      color: active ? '#FFF' : '#999',
+                      color: active ? 'text.primary' : 'text.secondary',
                     },
                   },
                 }}
               />
-              {active && (
-                <Box
-                  sx={{
-                    width: 4,
-                    height: 20,
-                    borderRadius: 2,
-                    bgcolor: '#FFF',
-                  }}
-                />
-              )}
             </ListItemButton>
           );
         })}
       </List>
 
-      {/* User card */}
+      {/* ── User card ── */}
+      <Divider />
       <Box sx={{ p: 2 }}>
         <Box
           sx={{
-            p: 2,
-            borderRadius: 2,
-            bgcolor: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            px: 1.5,
+            py: 1.25,
+            borderRadius: 1.5,
+            bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(15,23,42,0.04)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.5,
           }}
         >
-          <Typography variant="body2" sx={{ fontWeight: 600, color: '#FFF' }}>
-            {user?.fullName}
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#666' }}>
-            {user?.role}
-          </Typography>
+          <Avatar
+            sx={{
+              width: 30,
+              height: 30,
+              bgcolor: activePrimary,
+              fontSize: '0.75rem',
+              fontWeight: 700,
+            }}
+          >
+            {user?.fullName?.charAt(0) || 'U'}
+          </Avatar>
+          <Box sx={{ overflow: 'hidden' }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary', lineHeight: 1.2 }} noWrap>
+              {user?.fullName}
+            </Typography>
+            <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+              {user?.role}
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Box>
@@ -188,7 +198,7 @@ export default function AppLayout() {
 
   return (
     <Box sx={{ display: 'flex', minHeight: '100vh', bgcolor: 'background.default' }}>
-      {/* Sidebar */}
+      {/* ── Sidebar ── */}
       {isMobile ? (
         <Drawer
           variant="temporary"
@@ -202,44 +212,43 @@ export default function AppLayout() {
       ) : (
         <Drawer
           variant="permanent"
-          sx={{
-            width: DRAWER_WIDTH,
-            flexShrink: 0,
-            '& .MuiDrawer-paper': { width: DRAWER_WIDTH },
-          }}
+          sx={{ width: DRAWER_WIDTH, flexShrink: 0, '& .MuiDrawer-paper': { width: DRAWER_WIDTH } }}
         >
           {drawer}
         </Drawer>
       )}
 
-      {/* Main area */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      {/* ── Main ── */}
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Top bar */}
         <AppBar position="sticky" elevation={0}>
-          <Toolbar sx={{ gap: 2 }}>
+          <Toolbar sx={{ gap: 1.5, minHeight: '56px !important' }}>
             {isMobile && (
-              <IconButton color="inherit" onClick={() => setMobileOpen(true)}>
+              <IconButton size="small" color="inherit" onClick={() => setMobileOpen(true)}>
                 <MenuIcon />
               </IconButton>
             )}
 
-            <Typography
-              variant="h6"
-              sx={{ flex: 1, fontWeight: 600, fontSize: '1rem' }}
-            >
-              {visibleNav.find((n) => location.pathname.startsWith(n.path))
-                ?.label || 'E-Stop Logger'}
+            <Typography variant="subtitle1" sx={{ flex: 1, fontWeight: 600, color: 'text.primary' }}>
+              {visibleNav.find((n) => location.pathname.startsWith(n.path))?.label ?? 'E-Stop Logger'}
             </Typography>
 
+            {/* Theme toggle */}
+            <Tooltip title={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+              <IconButton size="small" onClick={toggle} sx={{ color: 'text.secondary' }}>
+                {isDark ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+
+            {/* Account */}
             <Tooltip title="Account">
-              <IconButton onClick={(e) => setAnchorEl(e.currentTarget)}>
+              <IconButton size="small" onClick={(e) => setAnchorEl(e.currentTarget)}>
                 <Avatar
                   sx={{
-                    width: 34,
-                    height: 34,
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    color: '#FFF',
-                    fontSize: '0.85rem',
+                    width: 32,
+                    height: 32,
+                    bgcolor: activePrimary,
+                    fontSize: '0.8rem',
                     fontWeight: 700,
                   }}
                 >
@@ -254,19 +263,17 @@ export default function AppLayout() {
               onClose={() => setAnchorEl(null)}
               transformOrigin={{ horizontal: 'right', vertical: 'top' }}
               anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+              slotProps={{ paper: { sx: { mt: 0.5, minWidth: 180 } } }}
             >
-              <MenuItem disabled>
-                <PersonIcon sx={{ mr: 1 }} /> {user?.username}
+              <MenuItem disabled sx={{ fontSize: '0.8125rem' }}>
+                <PersonIcon sx={{ mr: 1.5, fontSize: 16 }} /> {user?.username}
               </MenuItem>
               <Divider />
               <MenuItem
-                onClick={() => {
-                  setAnchorEl(null);
-                  logout();
-                  navigate('/login');
-                }}
+                onClick={() => { setAnchorEl(null); logout(); navigate('/login'); }}
+                sx={{ fontSize: '0.8125rem', color: 'error.main' }}
               >
-                <LogoutIcon sx={{ mr: 1 }} /> Logout
+                <LogoutIcon sx={{ mr: 1.5, fontSize: 16 }} /> Sign out
               </MenuItem>
             </Menu>
           </Toolbar>
@@ -289,3 +296,4 @@ export default function AppLayout() {
     </Box>
   );
 }
+

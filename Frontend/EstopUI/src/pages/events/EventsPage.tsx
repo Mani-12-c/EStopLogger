@@ -228,14 +228,14 @@ export default function EventsPage() {
                   >
                     <TableCell sx={{ fontWeight: 600 }}>#{e.eventId}</TableCell>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontWeight: 500, color: '#FFF' }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500, color: 'text.primary' }}>
                         {e.stationName || `Station ${e.stationId}`}
                       </Typography>
                     </TableCell>
-                    <TableCell sx={{ color: '#AAA' }}>
+                    <TableCell sx={{ color: 'text.primary' }}>
                       {e.factoryName || e.factoryId}
                     </TableCell>
-                    <TableCell sx={{ color: '#AAA' }}>
+                    <TableCell sx={{ color: 'text.primary' }}>
                       {e.pressedAt
                         ? dayjs(e.pressedAt).format('MMM DD, HH:mm:ss')
                         : '—'}

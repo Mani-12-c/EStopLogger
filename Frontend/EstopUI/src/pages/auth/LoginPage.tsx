@@ -11,18 +11,23 @@ import {
   InputAdornment,
   IconButton,
   Link,
+  Tooltip,
 } from '@mui/material';
 import {
   Visibility,
   VisibilityOff,
   RadioButtonChecked as LogoIcon,
+  LightMode as LightModeIcon,
+  DarkMode as DarkModeIcon,
 } from '@mui/icons-material';
 import { useAuth } from '../../context/AuthContext';
 import { authService } from '../../services/authService';
+import { useThemeMode } from '../../context/ThemeContext';
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const { mode, toggle } = useThemeMode();
   const [form, setForm] = useState({ username: '', password: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [error, setError] = useState('');
@@ -47,28 +52,39 @@ export default function LoginPage() {
     <Box
       sx={{
         minHeight: '100vh',
-        bgcolor: '#0A0A0A',
+        bgcolor: 'background.default',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
         p: 2,
+        position: 'relative',
       }}
     >
-      <Card sx={{ width: '100%', maxWidth: 420, border: '1px solid rgba(255,255,255,0.08)' }}>
+      {/* Theme toggle top-right */}
+      <Tooltip title={mode === 'dark' ? 'Switch to light' : 'Switch to dark'}>
+        <IconButton
+          onClick={toggle}
+          sx={{ position: 'absolute', top: 16, right: 16, color: 'text.secondary' }}
+        >
+          {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
+        </IconButton>
+      </Tooltip>
+
+      <Card sx={{ width: '100%', maxWidth: 420 }}>
         <CardContent sx={{ p: 4 }}>
           {/* Logo */}
           <Box sx={{ textAlign: 'center', mb: 4 }}>
-            <LogoIcon sx={{ fontSize: 48, color: '#EF4444', mb: 1 }} />
-            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em' }}>
-              E-STOP LOGGER
+            <LogoIcon sx={{ fontSize: 44, color: 'error.main', mb: 1 }} />
+            <Typography variant="h5" sx={{ fontWeight: 800, letterSpacing: '-0.02em', color: 'text.primary' }}>
+              E‑Stop Logger
             </Typography>
-            <Typography variant="body2" sx={{ color: '#666', mt: 0.5 }}>
+            <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
               Industrial Safety Monitoring
             </Typography>
           </Box>
 
           {error && (
-            <Alert severity="error" sx={{ mb: 2, borderRadius: 2 }}>
+            <Alert severity="error" sx={{ mb: 2, borderRadius: 1.5 }}>
               {error}
             </Alert>
           )}
@@ -107,18 +123,18 @@ export default function LoginPage() {
               variant="contained"
               size="large"
               disabled={loading || !form.username || !form.password}
-              sx={{ py: 1.5, fontSize: '0.95rem' }}
+              sx={{ py: 1.4, fontSize: '0.95rem', fontWeight: 700 }}
             >
               {loading ? 'Signing in…' : 'Sign In'}
             </Button>
           </form>
 
-          <Typography variant="body2" sx={{ textAlign: 'center', mt: 3, color: '#666' }}>
+          <Typography variant="body2" sx={{ textAlign: 'center', mt: 3, color: 'text.secondary' }}>
             Don't have an account?{' '}
             <Link
               component={RouterLink}
               to="/register"
-              sx={{ color: '#FFF', fontWeight: 600 }}
+              sx={{ color: 'primary.main', fontWeight: 600 }}
             >
               Register
             </Link>
@@ -128,3 +144,5 @@ export default function LoginPage() {
     </Box>
   );
 }
+
+

@@ -128,15 +128,15 @@ export default function StationsPage() {
                   onClick={() => navigate(`/stations/${s.stationId}`)}
                 >
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: '#FFF' }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'text.primary' }}>
                       {s.stationName}
                     </Typography>
                     <Typography variant="caption" sx={{ color: '#666' }}>
                       ID: {s.stationId}
                     </Typography>
                   </TableCell>
-                  <TableCell sx={{ color: '#AAA' }}>{s.factoryName}</TableCell>
-                  <TableCell sx={{ color: '#AAA' }}>{s.blockId}</TableCell>
+                  <TableCell sx={{ color: 'text.primary' }}>{s.factoryName}</TableCell>
+                  <TableCell sx={{ color: 'text.primary' }}>{s.blockId}</TableCell>
                   <TableCell>
                     <StatusChip status={s.status} />
                   </TableCell>

@@ -1,4 +1,4 @@
-/* Global reset for MUI dark theme */
+/* ─── Professional theme-neutral global styles ─────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -7,30 +7,47 @@
 
 html, body, #root {
   height: 100%;
-  background: #0A0A0A;
-  color: #F5F5F5;
   font-family: 'Inter', 'Roboto', 'Helvetica', 'Arial', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
 a {
   text-decoration: none;
   color: inherit;
+}
+
+/* ─── Scrollbar — light mode ────────────────────────────────────────────────── */
+:root {
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(71, 85, 105, 0.18);
+  --scrollbar-thumb-hover: rgba(71, 85, 105, 0.35);
+}
+
+/* ─── Scrollbar — dark mode ─────────────────────────────────────────────────── */
+.dark-mode {
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: rgba(241, 245, 249, 0.12);
+  --scrollbar-thumb-hover: rgba(241, 245, 249, 0.22);
+}
+
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ─── Recharts / chart canvas ───────────────────────────────────────────────── */
+.recharts-default-tooltip {
+  border-radius: 6px !important;
+  font-size: 0.8125rem !important;
 }
